@@ -47,9 +47,12 @@ void HAClimateMqtt::subscribe_topics()
 {
     esp_mqtt_client_subscribe(client, mode_cmd_topic.c_str(), 1);
     esp_mqtt_client_subscribe(client, temp_cmd_topic.c_str(), 1);
-    esp_mqtt_client_subscribe(client, fan_mode_cmd_topic.c_str(), 1);
+    esp_mqtt_client_subscribe(client, power_cmd_topic.c_str(), 1);
+    esp_mqtt_client_subscribe(client, fan_cmd_topic.c_str(), 1);
+    esp_mqtt_client_subscribe(client, swing_cmd_topic.c_str(), 1);
+    ESP_LOGI(TAG, "Subscribed to command topics");
 }
-
+/*
 void HAClimateMqtt::ha_autodiscovery()
 {
     char payload[512];
@@ -106,6 +109,7 @@ void HAClimateMqtt::ha_autodiscovery()
     std::string discovery_topic = "homeassistant/climate/esp32_ac_1/config";
     esp_mqtt_client_publish(client, discovery_topic.c_str(), payload, 0, 1, true);
 }
+*/
 
 // This should be called whenever AC state changes
 void HAClimateMqtt::publish_state(float current_temp, float target_temp,
@@ -124,8 +128,14 @@ void HAClimateMqtt::handle_command(const char* topic, const char* payload) {
     } else if (strcmp(topic, temp_cmd_topic.c_str()) == 0) {
         float temp = atof(payload);
         on_temp_command(temp);
-    } else if (strcmp(topic, fan_mode_cmd_topic.c_str()) == 0) {
+    } else if (strcmp(topic, fan_cmd_topic.c_str()) == 0) {
         on_fan_mode_command(payload);
+    } else if (strcmp(topic, power_cmd_topic.c_str()) == 0) {
+        on_power_command(payload);
+    } else if (strcmp(topic, swing_cmd_topic.c_str()) == 0) {
+        on_swing_command(payload);
+    } else {
+        ESP_LOGW(TAG, "Unknown topic: %s", topic);
     }
 }
 
@@ -134,12 +144,24 @@ void HAClimateMqtt::on_mode_command(const std::string& mode) {
     ESP_LOGI(TAG, "Mode command received: %s", mode.c_str());
     // TODO: Implement control of AC hardware
 }
+
 void HAClimateMqtt::on_temp_command(float temperature) {
     ESP_LOGI(TAG, "Temperature command received: %.1f", temperature);
     // TODO: Implement control of AC hardware
 }
+
 void HAClimateMqtt::on_fan_mode_command(const std::string& fan_mode) {
     ESP_LOGI(TAG, "Fan mode command received: %s", fan_mode.c_str());
+    // TODO: Implement control of AC hardware
+}
+
+void HAClimateMqtt::on_power_command(const std::string& power) {
+    ESP_LOGI(TAG, "Power command received: %s", power.c_str());
+    // TODO: Implement control of AC hardware
+}
+
+void HAClimateMqtt::on_swing_command(const std::string& swing) {
+    ESP_LOGI(TAG, "Swing command received: %s", swing.c_str());
     // TODO: Implement control of AC hardware
 }
 

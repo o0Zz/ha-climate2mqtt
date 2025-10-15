@@ -12,8 +12,6 @@
 #include "mdns.h"
 #include "HAClimateMqtt.h"
 
-#include "queue.h"
-
 // Example configuration
 #define BROKER_URI   "mqtt://192.168.10.100"
 #define CLIENT_ID    "ha_climate"

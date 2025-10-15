@@ -26,6 +26,8 @@ public:
     void on_mode_command(const std::string& mode);
     void on_temp_command(float temperature);
     void on_fan_mode_command(const std::string& fan_mode);
+    void on_power_command(const std::string& power);
+    void on_swing_command(const std::string& swing);
 
 private:
     static void mqtt_event_handler(void *handler_args, esp_event_base_t base, int32_t event_id, void *event_data);
@@ -37,8 +39,10 @@ private:
     std::string base_topic;
     std::string mode_cmd_topic;
     std::string temp_cmd_topic;
-    std::string fan_mode_cmd_topic;
     std::string state_topic;
+    std::string power_cmd_topic;
+    std::string fan_cmd_topic;
+    std::string swing_cmd_topic;
 
     // Credentials
     std::string username;
