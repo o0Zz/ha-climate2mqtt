@@ -14,8 +14,7 @@
 
 // Example configuration
 #define BROKER_URI   "mqtt://192.168.10.100"
-#define CLIENT_ID    "ha_climate"
-#define BASE_TOPIC   "ha_climate2mqtt/friendlyname"
+#define BASE_TOPIC   "climate2mqtt/"
 #define MQTT_USER    ""
 #define MQTT_PASS    ""
 
@@ -81,25 +80,13 @@ void wifi_init_sta(void)
 		NULL,
 		&instance_got_ip));
 
-	wifi_config_t wifi_config = {
-		.sta = {
-			.ssid = CONFIG_ESP_WIFI_SSID,
-			.password = CONFIG_ESP_WIFI_PASSWORD,
-			/* Setting a password implies station will connect to all security modes including WEP/WPA.
-			 * However these modes are deprecated and not advisable to be used. Incase your Access point
-			 * doesn't support WPA2, these mode can be enabled by commenting below line */
-			/*.threshold = {
-				.rssi = 0,
-				.rssi_5g_adjustment = 0,
-				.authmode = WIFI_AUTH_WPA2_PSK
-			},*/
-			/* Authmode threshold resets to WIFI_AUTH_OPEN if password is set to NULL */
-			.pmf_cfg = {
-				.capable = true,
-				.required = false
-			},
-		},
-	};
+	wifi_config_t wifi_config;
+	memset(&wifi_config, 0, sizeof(wifi_config_t));
+	memcpy(wifi_config.sta.ssid, CONFIG_ESP_WIFI_SSID, strlen(CONFIG_ESP_WIFI_SSID));
+	memcpy(wifi_config.sta.password, CONFIG_ESP_WIFI_PASSWORD, strlen(CONFIG_ESP_WIFI_PASSWORD));
+	wifi_config.sta.threshold.authmode = WIFI_AUTH_WPA2_PSK;
+	wifi_config.sta.pmf_cfg.capable = true;
+	wifi_config.sta.pmf_cfg.required = false;
 
 	ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_STA) );
 	ESP_ERROR_CHECK(esp_wifi_set_config(WIFI_IF_STA, &wifi_config) );
@@ -129,52 +116,6 @@ void wifi_init_sta(void)
 	//ESP_ERROR_CHECK(esp_event_handler_instance_unregister(IP_EVENT, IP_EVENT_STA_GOT_IP, instance_got_ip));
 	//ESP_ERROR_CHECK(esp_event_handler_instance_unregister(WIFI_EVENT, ESP_EVENT_ANY_ID, instance_any_id));
 	vEventGroupDelete(s_wifi_event_group);
-}
-
-esp_err_t query_mdns_host(const char * host_name, char *ip)
-{
-	ESP_LOGD(__FUNCTION__, "Query A: %s", host_name);
-
-	struct esp_ip4_addr addr;
-	addr.addr = 0;
-
-	esp_err_t err = mdns_query_a(host_name, 10000,	&addr);
-	if(err){
-		if(err == ESP_ERR_NOT_FOUND){
-			ESP_LOGW(__FUNCTION__, "%s: Host was not found!", esp_err_to_name(err));
-			return ESP_FAIL;
-		}
-		ESP_LOGE(__FUNCTION__, "Query Failed: %s", esp_err_to_name(err));
-		return ESP_FAIL;
-	}
-
-	ESP_LOGD(__FUNCTION__, "Query A: %s.local resolved to: " IPSTR, host_name, IP2STR(&addr));
-	sprintf(ip, IPSTR, IP2STR(&addr));
-	return ESP_OK;
-}
-
-void convert_mdns_host(char * from, char * to)
-{
-	ESP_LOGI(__FUNCTION__, "from=[%s]",from);
-	strcpy(to, from);
-	char *sp;
-	sp = strstr(from, ".local");
-	if (sp == NULL) return;
-
-	int _len = sp - from;
-	ESP_LOGD(__FUNCTION__, "_len=%d", _len);
-	char _from[128];
-	strcpy(_from, from);
-	_from[_len] = 0;
-	ESP_LOGI(__FUNCTION__, "_from=[%s]", _from);
-
-	char _ip[128];
-	esp_err_t ret = query_mdns_host(_from, _ip);
-	ESP_LOGI(__FUNCTION__, "query_mdns_host=%d _ip=[%s]", ret, _ip);
-	if (ret != ESP_OK) return;
-
-	strcpy(to, _ip);
-	ESP_LOGI(__FUNCTION__, "to=[%s]", to);
 }
 
 esp_err_t mountSPIFFS(const char * partition_label, const char * mount_point) {
@@ -214,7 +155,7 @@ esp_err_t mountSPIFFS(const char * partition_label, const char * mount_point) {
 
 extern "C" void app_main(void)
 {
-	// Initialize NVS
+	ESP_LOGI(TAG, "Initializing flash ...");
 	esp_err_t ret = nvs_flash_init();
 	if (ret == ESP_ERR_NVS_NO_FREE_PAGES || ret == ESP_ERR_NVS_NEW_VERSION_FOUND) {
 		ESP_ERROR_CHECK(nvs_flash_erase());
@@ -222,42 +163,27 @@ extern "C" void app_main(void)
 	}
 	ESP_ERROR_CHECK(ret);
 
-	ESP_LOGI(TAG, "ESP_WIFI_MODE_STA");
-	wifi_init_sta();
-
-	// Initialize mDNS
-	ESP_ERROR_CHECK( mdns_init() );
-
+	ESP_LOGI(TAG, "Mounting /root ...");
 	// Mount SPIFFS File System on FLASH
 	ESP_ERROR_CHECK(mountSPIFFS("storage", "/root"));
 
-	HAClimateMqtt *climateMqtt = new HAClimateMqtt(BROKER_URI, CLIENT_ID, BASE_TOPIC, MQTT_USER, MQTT_PASS);
+	ESP_LOGI(TAG, "Connecting to WiFi SSID:%s password:%s", CONFIG_ESP_WIFI_SSID, CONFIG_ESP_WIFI_PASSWORD);
+	wifi_init_sta();
+
+	std::string unique_id = "ac_unit_1";
+	ESP_LOGI(TAG, "Initializing HA Climate MQTT (%s) ...", unique_id.c_str());
+	HAClimateMqtt *climateMqtt = new HAClimateMqtt(BROKER_URI, MQTT_USER, MQTT_PASS, BASE_TOPIC + unique_id, unique_id);
     climateMqtt->start();
 
     // Optionally publish initial state
     climateMqtt->publish_state(24.0, 24.0, "cool", "auto"); // Example: temp, target, mode, fan
 
-/*
-	// Create Queue
-	xQueuePublish = xQueueCreate( 10, sizeof(QUEUE_t) );
-	configASSERT( xQueuePublish );
-	xQueueSubscribe = xQueueCreate( 10, sizeof(QUEUE_t) );
-	configASSERT( xQueueSubscribe );
-
-	// Start task
-	xTaskCreate(&mqtt_pub, "PUB", 1024*6, (void *)mount_point, 10, NULL);
-	xTaskCreate(&mqtt_sub, "SUB", 1024*6, (void *)mount_point, 10, NULL);
-
-	QUEUE_t queueBuf;
-	while(1) {
-		xQueueReceive(xQueueSubscribe, &queueBuf, portMAX_DELAY);
-		ESP_LOGI(TAG, "queueBuf.request=[%d]", queueBuf.request);
-		ESP_LOGI(TAG, "queueBuf.payload=[%.*s]", queueBuf.payload_len, queueBuf.payload);
-		if (xQueueSend(xQueuePublish, &queueBuf, 10) != pdPASS) {
-			ESP_LOGE(TAG, "xQueueSend fail");
-		}
+	// Application main loop
+	while (true) {
+		vTaskDelay(pdMS_TO_TICKS(10000));
 	}
 
-	*/
-
+	// Never reached
+	climateMqtt->stop();
+	delete climateMqtt;
 }
