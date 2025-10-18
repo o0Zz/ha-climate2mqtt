@@ -175,6 +175,10 @@ extern "C" void app_main(void)
 	HAClimateMqtt *climateMqtt = new HAClimateMqtt(BROKER_URI, MQTT_USER, MQTT_PASS, BASE_TOPIC + unique_id, unique_id);
     climateMqtt->start();
 
+	// Wait a bit for MQTT to connect
+	vTaskDelay(pdMS_TO_TICKS(5000));
+
+
     // Optionally publish initial state
     climateMqtt->publish_state(24.0, 24.0, "cool", "auto"); // Example: temp, target, mode, fan
 

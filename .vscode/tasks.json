@@ -1,0 +1,39 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+       {
+            "label": "Build & Run (ESP-IDF)",
+            "type": "shell",
+            "promptOnClose": true,
+            "command": "powershell",
+            "args": [
+                "-NoProfile",
+                "-ExecutionPolicy", "Bypass",
+                "-Command",
+                "$idfVersion = (Get-Content (Join-Path $env:IDF_TOOLS_PATH 'esp_idf.json') -Raw | ConvertFrom-Json).idfSelectedId; cmd /c \"cmd /c \\\"%IDF_TOOLS_PATH%\\idf_cmd_init.bat $($idfVersion) && idf.py build && idf.py flash && idf.py monitor\\\"\""
+            ],
+            "presentation": {
+                "reveal": "always",
+                "panel": "shared"
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "Clean (ESP-IDF)",
+            "type": "shell",
+            "promptOnClose": true,
+            "command": "powershell",
+            "args": [
+                "-NoProfile",
+                "-ExecutionPolicy", "Bypass",
+                "-Command",
+                "$idfVersion = (Get-Content (Join-Path $env:IDF_TOOLS_PATH 'esp_idf.json') -Raw | ConvertFrom-Json).idfSelectedId; cmd /c \"cmd /c \\\"%IDF_TOOLS_PATH%\\idf_cmd_init.bat $($idfVersion) && idf.py fullclean\\\"\""
+            ],
+            "presentation": {
+                "reveal": "always",
+                "panel": "shared"
+            },
+            "problemMatcher": []
+        }
+    ]
+}
