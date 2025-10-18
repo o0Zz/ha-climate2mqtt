@@ -45,19 +45,19 @@ void MqttHAClimate::on_connected()
     ESP_LOGI(TAG, "MQTT Connected !");
     publish_autodiscovery();
 }
-
+//https://www.home-assistant.io/integrations/mqtt/
 void MqttHAClimate::publish_autodiscovery()
 {
     json j;
 
     // Basic info
-    j["name"] = "ESP32 AC";
+    j["name"] = unique_id;
     j["unique_id"] = unique_id;
 
     // Device
     j["device"] = {
         {"identifiers", {unique_id}},
-        {"name", "ESP32 AC Unit"},
+        {"name", "ESP32 AC"},
         {"model", "ESP32 Climate Controller"},
         {"manufacturer", "Espressif"}
     };
@@ -65,19 +65,19 @@ void MqttHAClimate::publish_autodiscovery()
     // Modes
     j["modes"] = {"off", "cool", "heat", "dry", "fan_only"};
     j["mode_command_topic"] = base_topic + "/set/mode";
-    j["mode_state_topic"]   = base_topic + "/state";
-    j["mode_template"] = "{{ value_json.mode if (value_json is defined and value_json.mode is defined and value_json.mode|length) else 'off' }}";
+    j["mode_state_topic"]   = state_topic;
+    j["mode_state_template"] = "{{ value_json.mode if (value_json is defined and value_json.mode is defined and value_json.mode|length) else 'off' }}";
 
     // Temperature
     j["temperature_command_topic"] = base_topic + "/set/temperature";
-    j["temperature_state_topic"]   = base_topic + "/state";
-    j["temperature_template"] =
+    j["temperature_state_topic"]   = state_topic;
+    j["temperature_state_template"] =
         "{% if (value_json is defined and value_json.target_temperature is defined) %}"
         "{% if (value_json.target_temperature|int >= 16 and value_json.target_temperature|int <= 30) %}{{ value_json.target_temperature }}"
         "{% elif (value_json.target_temperature|int < 16) %}16"
         "{% elif (value_json.target_temperature|int > 30) %}30"
         "{% endif %}{% else %}22{% endif %}";
-    j["current_temperature_topic"] = base_topic + "/state";
+    j["current_temperature_topic"] = state_topic;
     j["current_temperature_template"] =
         "{{ value_json.room_temperature if (value_json is defined and value_json.room_temperature is defined and value_json.room_temperature|int > 1) }}";
     j["min_temp"] = 16;
@@ -87,25 +87,24 @@ void MqttHAClimate::publish_autodiscovery()
 
     // Power
     j["power_command_topic"] = base_topic + "/set/power";
-    j["power_template"] =
-        "{{ value_json.power if (value_json is defined and value_json.power is defined and value_json.power|length) else 'off' }}";
+    //j["power_template"] = "{{ value_json.power if (value_json is defined and value_json.power is defined and value_json.power|length) else 'off' }}";
 
     // Fan
-    j["fan_modes"] = {"auto", "low", "medium", "high"};
+    j["fan_modes"] = {"auto", "diffuse" /*Quiet*/, "low", "medium", "high"};
     j["fan_mode_command_topic"] = base_topic + "/set/fan_mode";
-    j["fan_mode_state_topic"]   = base_topic + "/state";
-    j["fan_mode_template"] =
+    j["fan_mode_state_topic"]   = state_topic;
+    j["fan_mode_state_template"] =
         "{{ value_json.fan_mode if (value_json is defined and value_json.fan_mode is defined and value_json.fan_mode|length) else 'auto' }}";
 
     // Swing
     j["swing_modes"] = {"AUTO", "1", "2", "3", "4", "5", "SWING"};
     j["swing_mode_command_topic"] = base_topic + "/set/swing";
-    j["swing_mode_state_topic"]   = base_topic + "/state";
-    j["swing_mode_template"] =
+    j["swing_mode_state_topic"]   = state_topic;
+    j["swing_mode_state_template"] =
         "{{ value_json.swing if (value_json is defined and value_json.swing is defined and value_json.swing|length) else 'AUTO' }}";
 
     // Action
-    j["action_topic"] = base_topic + "/state";
+    j["action_topic"] = state_topic;
     j["action_template"] = "{{ value_json.action if (value_json is defined and value_json.action is defined and value_json.action|length) else 'idle' }}";
 
     publish("homeassistant/climate/" + unique_id + "/config", j.dump(), 1, true);
@@ -114,16 +113,16 @@ void MqttHAClimate::publish_autodiscovery()
 }
 
 // This should be called whenever AC state changes
-void MqttHAClimate::publish_state(float current_temp, float target_temp,
-                                  const char* mode, const char* fan_mode) {
-    char payload[256];
+void MqttHAClimate::publish_state(float room_temp, float target_temp, const std::string &power, const std::string &mode, const std::string &fan_mode) 
+{
+    char payload[512];
     snprintf(payload, sizeof(payload),
-        "{\"room_temperature\":%.1f,\"target_temperature\":%.1f,\"mode\":\"%s\",\"fan_mode\":\"%s\", \"power\":\"on\", \"swing\":\"AUTO\", \"action\":\"idle\"}",
-        current_temp, target_temp, mode, fan_mode);
+        "{\"room_temperature\":%.1f,\"target_temperature\":%.1f,\"mode\":\"%s\",\"fan_mode\":\"%s\", \"power\":\"%s\", \"swing\":\"AUTO\", \"action\":\"idle\"}",
+        room_temp, target_temp, mode.c_str(), fan_mode.c_str(), power.c_str());
     publish(state_topic, payload, 1, false);
 }
 
-// These should be implemented in your main code
+// These should be implemented in your main code I LOVE YOU 
 void MqttHAClimate::on_mode_command(const std::string& mode) {
     ESP_LOGI(TAG, "Mode command received: %s", mode.c_str());
     // TODO: Implement control of AC hardware

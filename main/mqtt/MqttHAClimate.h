@@ -13,8 +13,7 @@ public:
                     const std::string &base_topic,
                     const std::string &unique_id);
 
-    void publish_state(float current_temp, float target_temp,
-                       const char* mode, const char* fan_mode);
+    void publish_state(float room_temp, float target_temp, const std::string &power, const std::string &mode, const std::string &fan_mode);
 
     // Callbacks to be implemented in your app
     void on_mode_command(const std::string& mode);

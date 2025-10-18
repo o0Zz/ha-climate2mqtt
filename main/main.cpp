@@ -18,9 +18,6 @@
 #define MQTT_USER    ""
 #define MQTT_PASS    ""
 
-QueueHandle_t xQueuePublish;
-QueueHandle_t xQueueSubscribe;
-
 /* FreeRTOS event group to signal when we are connected*/
 static EventGroupHandle_t s_wifi_event_group;
 
@@ -175,16 +172,11 @@ extern "C" void app_main(void)
 	MqttHAClimate *climateMqtt = new MqttHAClimate(BROKER_URI, MQTT_USER, MQTT_PASS, BASE_TOPIC + unique_id, unique_id);
     climateMqtt->start();
 
-	// Wait a bit for MQTT to connect
-	vTaskDelay(pdMS_TO_TICKS(5000));
-
-
-    // Optionally publish initial state
-    climateMqtt->publish_state(24.0, 24.0, "cool", "auto"); // Example: temp, target, mode, fan
-
-	// Application main loop
+	float room_temp = 24.0;
 	while (true) {
-		vTaskDelay(pdMS_TO_TICKS(10000));
+		vTaskDelay(pdMS_TO_TICKS(5000));
+		climateMqtt->publish_state(room_temp, 24.0, "on", "cool", "auto");
+		room_temp -= 0.1;
 	}
 
 	// Never reached
