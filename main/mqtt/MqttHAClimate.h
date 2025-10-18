@@ -2,12 +2,12 @@
 
 #include <cstring>
 #include <string>
-#include "MqttCommandRouter.h"
+#include "mqtt/MqttClient.h"
 
-class HAClimateMqtt : public MqttCommandRouter 
+class MqttHAClimate : public MqttClient 
 {
 public:
-    HAClimateMqtt(const std::string &broker_uri,
+    MqttHAClimate(const std::string &broker_uri,
                     const std::string &username,
                     const std::string &password,
                     const std::string &base_topic,
@@ -24,7 +24,7 @@ public:
     void on_swing_command(const std::string& swing);
 
 protected:
-    // Override from MqttCommandRouter
+    // Override from MqttClient
     void on_connected() override;
 
     void publish_autodiscovery();

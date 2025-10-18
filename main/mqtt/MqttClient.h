@@ -5,20 +5,17 @@
 #include <functional>
 #include <map>
 #include "mqtt_client.h"
-#include "freertos/FreeRTOS.h"
-#include "freertos/task.h"
-#include "esp_log.h"
 
-class MqttCommandRouter 
+class MqttClient 
 {
 public:
     using CommandCallback = std::function<void(const std::string &payload)>;
 
-    MqttCommandRouter(const std::string &broker_uri,
+    MqttClient(const std::string &broker_uri,
                       const std::string &username = "",
                       const std::string &password = "");
     
-    virtual ~MqttCommandRouter();
+    virtual ~MqttClient();
 
     void start();
     void stop();
@@ -32,6 +29,7 @@ public:
 protected:
     // Virtual method to be called when connected (for derived classes to subscribe to their topics)
     virtual void on_connected() {}
+    virtual void on_disconnected() {}
     
     // Handle incoming MQTT command - routes to registered callbacks
     void handle_command(const std::string &topic, const std::string &payload);

@@ -10,7 +10,7 @@
 #include "nvs_flash.h"
 #include "esp_spiffs.h"
 #include "mdns.h"
-#include "HAClimateMqtt.h"
+#include "mqtt/MqttHAClimate.h"
 
 // Example configuration
 #define BROKER_URI   "mqtt://192.168.10.100"
@@ -172,7 +172,7 @@ extern "C" void app_main(void)
 
 	std::string unique_id = "ac_unit_1";
 	ESP_LOGI(TAG, "Initializing HA Climate MQTT (%s) ...", unique_id.c_str());
-	HAClimateMqtt *climateMqtt = new HAClimateMqtt(BROKER_URI, MQTT_USER, MQTT_PASS, BASE_TOPIC + unique_id, unique_id);
+	MqttHAClimate *climateMqtt = new MqttHAClimate(BROKER_URI, MQTT_USER, MQTT_PASS, BASE_TOPIC + unique_id, unique_id);
     climateMqtt->start();
 
 	// Wait a bit for MQTT to connect

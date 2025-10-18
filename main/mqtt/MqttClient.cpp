@@ -1,9 +1,10 @@
-#include "MqttCommandRouter.h"
+#include "mqtt/MqttClient.h"
+#include "esp_log.h"
 #include "esp_mac.h" // esp_base_mac_addr_get
 
-#define TAG "MqttCommandRouter"
+#define TAG "MqttClient"
 
-MqttCommandRouter::MqttCommandRouter(const std::string &broker_uri,
+MqttClient::MqttClient(const std::string &broker_uri,
                                      const std::string &username,
                                      const std::string &password)
     : broker_uri(broker_uri),
@@ -28,33 +29,33 @@ MqttCommandRouter::MqttCommandRouter(const std::string &broker_uri,
     ESP_LOGI(TAG, "MQTT client created with client_id: %s", client_id);
 }
 
-MqttCommandRouter::~MqttCommandRouter()
+MqttClient::~MqttClient()
 {
     if (client) 
         esp_mqtt_client_destroy(client); //Cannot be called from the MQTT event handler
 }
 
-void MqttCommandRouter::start() 
+void MqttClient::start() 
 {
     ESP_LOGD(TAG, "MQTT client starting ...");
 
-    esp_mqtt_client_register_event(client, MQTT_EVENT_ANY, MqttCommandRouter::mqtt_event_handler, this);
+    esp_mqtt_client_register_event(client, MQTT_EVENT_ANY, MqttClient::mqtt_event_handler, this);
     esp_mqtt_client_start(client);
 
     ESP_LOGI(TAG, "MQTT client started with client_id: %s", client_id);
 }
 
-void MqttCommandRouter::stop() 
+void MqttClient::stop() 
 {
     ESP_LOGD(TAG, "MQTT client stopping ...");
 
     esp_mqtt_client_stop(client); //Cannot be called from the MQTT event handler
-    esp_mqtt_client_unregister_event(client, MQTT_EVENT_ANY, MqttCommandRouter::mqtt_event_handler);
+    esp_mqtt_client_unregister_event(client, MQTT_EVENT_ANY, MqttClient::mqtt_event_handler);
 
     ESP_LOGI(TAG, "MQTT client stopped !");
 }
 
-void MqttCommandRouter::subscribe(const std::string& topic, CommandCallback callback)
+void MqttClient::subscribe(const std::string& topic, CommandCallback callback)
 {
     topic_callbacks[topic] = callback;
 
@@ -65,7 +66,7 @@ void MqttCommandRouter::subscribe(const std::string& topic, CommandCallback call
     ESP_LOGI(TAG, "Subscribed to topic: %s", topic.c_str());
 }
 
-void MqttCommandRouter::publish(const std::string& topic, const std::string &payload, int qos, int retain)
+void MqttClient::publish(const std::string& topic, const std::string &payload, int qos, int retain)
 {
     if (!client || !m_connected)
     {
@@ -77,7 +78,7 @@ void MqttCommandRouter::publish(const std::string& topic, const std::string &pay
     esp_mqtt_client_publish(client, topic.c_str(), payload.c_str(), 0, qos, retain);
 }
 
-void MqttCommandRouter::handle_command(const std::string& topic, const std::string& payload)
+void MqttClient::handle_command(const std::string& topic, const std::string& payload)
 {
     auto it = topic_callbacks.find(topic);
     if (it == topic_callbacks.end()) {
@@ -88,10 +89,10 @@ void MqttCommandRouter::handle_command(const std::string& topic, const std::stri
     it->second(payload);
 }
 
-void MqttCommandRouter::mqtt_event_handler(void *handler_args, esp_event_base_t base, int32_t event_id, void *event_data) 
+void MqttClient::mqtt_event_handler(void *handler_args, esp_event_base_t base, int32_t event_id, void *event_data) 
 {
     esp_mqtt_event_handle_t event = (esp_mqtt_event_handle_t)event_data;
-    MqttCommandRouter *instance = (MqttCommandRouter *)handler_args;
+    MqttClient *instance = (MqttClient *)handler_args;
 
     if (event->event_id == MQTT_EVENT_CONNECTED) 
     {
@@ -110,6 +111,7 @@ void MqttCommandRouter::mqtt_event_handler(void *handler_args, esp_event_base_t 
     {
         ESP_LOGI(TAG, "MQTT Disconnected");
         instance->m_connected = false;
+        instance->on_disconnected();
     }
     else if (event->event_id == MQTT_EVENT_DATA) 
     {

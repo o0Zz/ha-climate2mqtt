@@ -1,15 +1,17 @@
-#include "HAClimateMqtt.h"
-#include <nlohmann/json.hpp>
+#include "MqttHAClimate.h"
+#include <json/nlohmann/json.hpp>
+#include "esp_log.h"
+
 using json = nlohmann::json;
 
-#define TAG "HAClimateMqtt"
+#define TAG "MqttHAClimate"
 
-HAClimateMqtt::HAClimateMqtt(const std::string &broker_uri,
+MqttHAClimate::MqttHAClimate(const std::string &broker_uri,
                              const std::string &username,
                              const std::string &password,
                              const std::string &base_topic,
                              const std::string &unique_id)
-    : MqttCommandRouter(broker_uri, username, password),
+    : MqttClient(broker_uri, username, password),
         unique_id(unique_id),
         base_topic(base_topic),
         state_topic(base_topic + "/state")
@@ -38,13 +40,13 @@ HAClimateMqtt::HAClimateMqtt(const std::string &broker_uri,
 
 }
 
-void HAClimateMqtt::on_connected() 
+void MqttHAClimate::on_connected() 
 {
     ESP_LOGI(TAG, "MQTT Connected !");
     publish_autodiscovery();
 }
 
-void HAClimateMqtt::publish_autodiscovery()
+void MqttHAClimate::publish_autodiscovery()
 {
     json j;
 
@@ -112,7 +114,7 @@ void HAClimateMqtt::publish_autodiscovery()
 }
 
 // This should be called whenever AC state changes
-void HAClimateMqtt::publish_state(float current_temp, float target_temp,
+void MqttHAClimate::publish_state(float current_temp, float target_temp,
                                   const char* mode, const char* fan_mode) {
     char payload[256];
     snprintf(payload, sizeof(payload),
@@ -122,27 +124,27 @@ void HAClimateMqtt::publish_state(float current_temp, float target_temp,
 }
 
 // These should be implemented in your main code
-void HAClimateMqtt::on_mode_command(const std::string& mode) {
+void MqttHAClimate::on_mode_command(const std::string& mode) {
     ESP_LOGI(TAG, "Mode command received: %s", mode.c_str());
     // TODO: Implement control of AC hardware
 }
 
-void HAClimateMqtt::on_temp_command(float temperature) {
+void MqttHAClimate::on_temp_command(float temperature) {
     ESP_LOGI(TAG, "Temperature command received: %.1f", temperature);
     // TODO: Implement control of AC hardware
 }
 
-void HAClimateMqtt::on_fan_mode_command(const std::string& fan_mode) {
+void MqttHAClimate::on_fan_mode_command(const std::string& fan_mode) {
     ESP_LOGI(TAG, "Fan mode command received: %s", fan_mode.c_str());
     // TODO: Implement control of AC hardware
 }
 
-void HAClimateMqtt::on_power_command(const std::string& power) {
+void MqttHAClimate::on_power_command(const std::string& power) {
     ESP_LOGI(TAG, "Power command received: %s", power.c_str());
     // TODO: Implement control of AC hardware
 }
 
-void HAClimateMqtt::on_swing_command(const std::string& swing) {
+void MqttHAClimate::on_swing_command(const std::string& swing) {
     ESP_LOGI(TAG, "Swing command received: %s", swing.c_str());
     // TODO: Implement control of AC hardware
 }

@@ -1,6 +1,6 @@
 # HA-Climate2MQTT
 
-A lightweight solution for integrating any climate control system with **Home Assistant** via **MQTT** and **ESP32**
+A lightweight solution for integrating any climate control system with **Home Assistant** via **MQTT** and an **ESP32**
 
 ## ❄️ Supported Climates
 - [ ] Mitsubishi
@@ -11,7 +11,10 @@ A lightweight solution for integrating any climate control system with **Home As
 ## ⚙️ Supported Features
 
 - [x] HA Auto discovery
-- [x] Set temperature, mode, power, swing
+- [ ] Set temperature, mode, power, swing
+- [ ] AC can be remotly control via WebInterface
+- [ ] Fully configurable from WebInterface
+- [ ] Access point to setup it
 
 
 ## 🧪 Tested Hardware
@@ -20,10 +23,18 @@ A lightweight solution for integrating any climate control system with **Home As
 
 ## 🚀 How to Run
 
-1. Download the firmware.
+1. Download the firmware for your microcontroller
 2. Wire your AC unit.
-Refer to the documentation in the doc/ folder for wiring details.
-3. Power on the ESP32.
+Refer to the documentation in the [doc/](https://github.com/o0Zz/ha-climate2mqtt/tree/main/doc) folder for wiring details.
+3. Flash your ESP32 via ESP flasher
+https://www.espressif.com/en/support/download/other-tools  
+or 
+```python 
+pip install esptool
+esptool.py --port COM3 erase_flash
+esptool.py --chip esp32 --port COM3 --baud 460800 write_flash -z 0x1000 firmware.bin
+```
+4. Power on the ESP32.
 By default, it will create a Wi-Fi access point named `ESP32_Climate2MQTT`.
 4. Connect to the ESP32 using that access point and access to "http://192.168.8.1"
 
@@ -33,7 +44,7 @@ Ensure you have the following installed before building:
 
 - [CMake](https://cmake.org/download/)  
 - [Ninja](https://github.com/ninja-build/ninja/releases)
-- [ESP-IDF (v5.1 or newer)](https://dl.espressif.com/dl/esp-idf/)
+- [ESP-IDF (v5.5.1 or newer)](https://dl.espressif.com/dl/esp-idf/)
 
 ## 🧰 Build Instructions
 
@@ -49,8 +60,6 @@ idf.py menuconfig
 idf.py build
 idf.py flash
 ```
-
----
 
 ### 🧩 Using VSCode - Windows
 
@@ -72,9 +81,3 @@ In VS Code, set **Command Prompt** as the default terminal:
 1. Press **Ctrl + Shift + P**
 2. Select **Tasks: Run Task**
 3. Choose **Build & Run (ESP-IDF)**
-
----
-
-## Wiring
-
-> **TODO**
