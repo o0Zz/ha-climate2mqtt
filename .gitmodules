@@ -1,0 +1,3 @@
+[submodule "lib/libiohub"]
+	path = lib/libiohub
+	url = https://github.com/o0Zz/libiohub.git

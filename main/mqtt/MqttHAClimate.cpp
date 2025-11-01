@@ -122,7 +122,7 @@ void MqttHAClimate::publish_state(float room_temp, float target_temp, const std:
     publish(state_topic, payload, 1, false);
 }
 
-// These should be implemented in your main code I LOVE YOU 
+// These should be implemented in your main code
 void MqttHAClimate::on_mode_command(const std::string& mode) {
     ESP_LOGI(TAG, "Mode command received: %s", mode.c_str());
     // TODO: Implement control of AC hardware
