@@ -21,9 +21,9 @@ A lightweight solution for integrating any climate control system with **Home As
 
 - [x] ESP32-C6 (https://fr.aliexpress.com/item/1005008953214925.html)
 
-## 🚀 How to Run
+## 🚀 How to Flash & Run
 
-1. Download the firmware for your microcontroller
+1. Download the firmware for your microcontroller (In release section)
 2. Wire your AC unit.
 Refer to the documentation in the [doc/](https://github.com/o0Zz/ha-climate2mqtt/tree/main/doc) folder for wiring details.
 3. Flash your ESP32 via ESP flasher
@@ -38,15 +38,15 @@ esptool.py --chip esp32 --port COM3 --baud 460800 write_flash -z 0x1000 firmware
 By default, it will create a Wi-Fi access point named `ESP32_Climate2MQTT`.
 4. Connect to the ESP32 using that access point and access to "http://192.168.8.1"
 
-## ⚙️ Prerequisites
+## 🧰 Build Instructions
+
+### ⚙️ Prerequisites
 
 Ensure you have the following installed before building:
 
 - [CMake](https://cmake.org/download/)  
 - [Ninja](https://github.com/ninja-build/ninja/releases)
 - [ESP-IDF (v5.5.1 or newer)](https://dl.espressif.com/dl/esp-idf/)
-
-## 🧰 Build Instructions
 
 ### 🖥️ Using ESP-IDF Command Line
 

@@ -11,6 +11,7 @@
 #include "esp_spiffs.h"
 #include "mdns.h"
 #include "mqtt/MqttHAClimate.h"
+#include "iohub.h"
 
 // Example configuration
 #define BROKER_URI   "mqtt://192.168.10.100"
@@ -153,12 +154,12 @@ esp_err_t mountSPIFFS(const char * partition_label, const char * mount_point) {
 extern "C" void app_main(void)
 {
 	ESP_LOGI(TAG, "Initializing flash ...");
-	esp_err_t ret = nvs_flash_init();
-	if (ret == ESP_ERR_NVS_NO_FREE_PAGES || ret == ESP_ERR_NVS_NEW_VERSION_FOUND) {
+	esp_err_t err = nvs_flash_init();
+	if (err == ESP_ERR_NVS_NO_FREE_PAGES || err == ESP_ERR_NVS_NEW_VERSION_FOUND) {
 		ESP_ERROR_CHECK(nvs_flash_erase());
-		ret = nvs_flash_init();
+		err = nvs_flash_init();
 	}
-	ESP_ERROR_CHECK(ret);
+	ESP_ERROR_CHECK(err);
 
 	ESP_LOGI(TAG, "Mounting /root ...");
 	// Mount SPIFFS File System on FLASH
@@ -172,8 +173,32 @@ extern "C" void app_main(void)
 	MqttHAClimate *climateMqtt = new MqttHAClimate(BROKER_URI, MQTT_USER, MQTT_PASS, BASE_TOPIC + unique_id, unique_id);
     climateMqtt->start();
 
+	heatpump_mitsubishi_ctx heatpumpCtx;
+	uart_ctx uartCtx;
+
+	ret_code_t ret = iohub_uart_init(&uartCtx, 0, 1);
+	if (ret != SUCCESS) {
+		ESP_LOGE(TAG, "Failed to initialize UART for Heatpump Mitsubishi (ret=%d)", ret);
+		return;
+	}
+
+	ret = iohub_heatpump_mitsubishi_init(&heatpumpCtx, &uartCtx);
+	if (ret != SUCCESS) {
+		ESP_LOGE(TAG, "Failed to initialize Heatpump Mitsubishi (ret=%d)", ret);
+		return;
+	}
+
 	float room_temp = 24.0;
 	while (true) {
+		IoHubHeatpumpAction action;
+		IoHubHeatpumpFanSpeed fanSpeed;
+		IoHubHeatpumpMode mode;
+		int temperature;
+		float room_temp;
+
+		iohub_heatpump_mitsubishi_read(&heatpumpCtx, &action, &temperature, &fanSpeed, &mode);
+		iohub_heatpump_mitsubishi_read_room_temperature(&heatpumpCtx, &room_temp);
+		ESP_LOGI(TAG, "Heatpump Status: Action=%d Temp=%d Fan=%d Mode=%d RoomTemp=%.1f", action, temperature, fanSpeed, mode, room_temp);
 		vTaskDelay(pdMS_TO_TICKS(5000));
 		climateMqtt->publish_state(room_temp, 24.0, "on", "cool", "auto");
 		room_temp -= 0.1;
