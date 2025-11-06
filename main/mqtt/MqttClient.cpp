@@ -55,27 +55,38 @@ void MqttClient::stop()
     ESP_LOGI(TAG, "MQTT client stopped !");
 }
 
-void MqttClient::subscribe(const std::string& topic, CommandCallback callback)
+bool MqttClient::subscribe(const std::string& topic, CommandCallback callback)
 {
     topic_callbacks[topic] = callback;
 
     if (!client || !m_connected)
-        return; // Not connected yet
-    
-    esp_mqtt_client_subscribe(client, topic.c_str(), 1);
+    {
+        ESP_LOGW(TAG, "MQTT client not connected, cannot subscribe to topic: %s", topic.c_str());
+        return false; // Not connected yet
+    }
+
+    int ret = esp_mqtt_client_subscribe(client, topic.c_str(), 1);
+    if (ret != ESP_OK) 
+    {
+        ESP_LOGE(TAG, "Failed to subscribe to topic: %s", topic.c_str());
+        return false;
+    }
+
     ESP_LOGI(TAG, "Subscribed to topic: %s", topic.c_str());
+    return true;
 }
 
-void MqttClient::publish(const std::string& topic, const std::string &payload, int qos, int retain)
+bool MqttClient::publish(const std::string& topic, const std::string &payload, int qos, int retain)
 {
     if (!client || !m_connected)
     {
         ESP_LOGW(TAG, "MQTT client not connected, cannot publish to topic: %s", topic.c_str());
-        return;
+        return false;
     }
 
-    ESP_LOGI(TAG, "Publishing to topic: %s, payload: %.255s", topic.c_str(), payload.c_str());
-    esp_mqtt_client_publish(client, topic.c_str(), payload.c_str(), 0, qos, retain);
+    ESP_LOGI(TAG, "Publishing to topic: %s, payload: %.255s...", topic.c_str(), payload.c_str());
+    int ret = esp_mqtt_client_publish(client, topic.c_str(), payload.c_str(), 0, qos, retain);
+    return (ret == ESP_OK);
 }
 
 void MqttClient::handle_command(const std::string& topic, const std::string& payload)

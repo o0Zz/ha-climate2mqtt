@@ -10,7 +10,8 @@
 #include "nvs_flash.h"
 #include "esp_spiffs.h"
 #include "mdns.h"
-#include "mqtt/MqttHAClimate.h"
+#include "mqtt/HAMqttClimateImpl.h"
+#include "climate/MitsubishiClimate.h"
 #include "iohub.h"
 
 // Example configuration
@@ -151,6 +152,7 @@ esp_err_t mountSPIFFS(const char * partition_label, const char * mount_point) {
 	return ret;
 }
 
+
 extern "C" void app_main(void)
 {
 	ESP_LOGI(TAG, "Initializing flash ...");
@@ -168,40 +170,35 @@ extern "C" void app_main(void)
 	ESP_LOGI(TAG, "Connecting to WiFi SSID:%s password:%s", CONFIG_ESP_WIFI_SSID, CONFIG_ESP_WIFI_PASSWORD);
 	wifi_init_sta();
 
+	iohub_platform_init();
+
+	std::shared_ptr<IClimate> climate = nullptr;
+
+	if (climate == nullptr)
+	{
+		ESP_LOGI(TAG, "Initializing Heatpump Mitsubishi ...");
+		climate = std::make_shared<MitsubishiClimate>(0, 1);
+	}
+	
+	if (!climate->setup())
+	{
+		ESP_LOGE(TAG, "Failed to setup Mitsubishi Climate interface !");
+		return;
+	}
+
 	std::string unique_id = "ac_unit_1";
 	ESP_LOGI(TAG, "Initializing HA Climate MQTT (%s) ...", unique_id.c_str());
-	MqttHAClimate *climateMqtt = new MqttHAClimate(BROKER_URI, MQTT_USER, MQTT_PASS, BASE_TOPIC + unique_id, unique_id);
+
+	HAMqttClimateImpl *climateMqtt = new HAMqttClimateImpl(climate, BROKER_URI, MQTT_USER, MQTT_PASS, BASE_TOPIC + unique_id, unique_id);
     climateMqtt->start();
 
-	heatpump_mitsubishi_ctx heatpumpCtx;
-	uart_ctx uartCtx;
-
-	ret_code_t ret = iohub_uart_init(&uartCtx, 0, 1);
-	if (ret != SUCCESS) {
-		ESP_LOGE(TAG, "Failed to initialize UART for Heatpump Mitsubishi (ret=%d)", ret);
-		return;
-	}
-
-	ret = iohub_heatpump_mitsubishi_init(&heatpumpCtx, &uartCtx);
-	if (ret != SUCCESS) {
-		ESP_LOGE(TAG, "Failed to initialize Heatpump Mitsubishi (ret=%d)", ret);
-		return;
-	}
-
-	float room_temp = 24.0;
 	while (true) {
-		IoHubHeatpumpAction action;
-		IoHubHeatpumpFanSpeed fanSpeed;
-		IoHubHeatpumpMode mode;
-		int temperature;
-		float room_temp;
 
-		iohub_heatpump_mitsubishi_read(&heatpumpCtx, &action, &temperature, &fanSpeed, &mode);
-		iohub_heatpump_mitsubishi_read_room_temperature(&heatpumpCtx, &room_temp);
-		ESP_LOGI(TAG, "Heatpump Status: Action=%d Temp=%d Fan=%d Mode=%d RoomTemp=%.1f", action, temperature, fanSpeed, mode, room_temp);
-		vTaskDelay(pdMS_TO_TICKS(5000));
-		climateMqtt->publish_state(room_temp, 24.0, "on", "cool", "auto");
-		room_temp -= 0.1;
+		vTaskDelay(pdMS_TO_TICKS(10000));
+
+
+		ESP_LOGD(TAG, "Refreshing state...");
+		climateMqtt->refresh();
 	}
 
 	// Never reached

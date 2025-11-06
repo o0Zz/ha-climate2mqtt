@@ -21,10 +21,10 @@ public:
     void stop();
     
     // Subscribe to a topic with a callback function
-    void subscribe(const std::string& topic, CommandCallback callback);
+    bool subscribe(const std::string& topic, CommandCallback callback);
     
     // Publish a message to a topic
-    void publish(const std::string& topic, const std::string &payload, int qos = 0, int retain = false);
+    bool publish(const std::string& topic, const std::string &payload, int qos = 0, int retain = false);
 
 protected:
     // Virtual method to be called when connected (for derived classes to subscribe to their topics)

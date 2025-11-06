@@ -1,4 +1,4 @@
-#include "MqttHAClimate.h"
+#include "mqtt/HAMqttClimate.h"
 #include <json/nlohmann/json.hpp>
 #include "esp_log.h"
 
@@ -6,7 +6,51 @@ using json = nlohmann::json;
 
 #define TAG "MqttHAClimate"
 
-MqttHAClimate::MqttHAClimate(const std::string &broker_uri,
+const char *kModeStr[] = {
+    "off",
+    "heat",
+    "cool",
+    "auto",
+    "dry",
+    "fan_only"
+};
+
+const char *kFanModeStr[] = {
+    "auto",
+    "diffuse",
+    "low",
+    "medium",
+    "high"
+};
+
+const char *kActionStr[] = {
+    "idle",
+    "heating",
+    "cooling",
+    "drying",
+    "fan_only"
+};
+
+const char *kSwingStr[] = {
+    "AUTO",
+    "1",
+    "2",
+    "3",
+    "4",
+    "5",
+    "SWING"
+};
+
+int find_enum_value(const std::string &value, const char* str_array[], size_t array_size) {
+    for (size_t i = 0; i < array_size; ++i) {
+        if (value == str_array[i]) {
+            return static_cast<int>(i);
+        }
+    }
+    return 0; // Default to first value if not found
+}
+
+HAMqttClimate::HAMqttClimate(const std::string &broker_uri,
                              const std::string &username,
                              const std::string &password,
                              const std::string &base_topic,
@@ -18,7 +62,8 @@ MqttHAClimate::MqttHAClimate(const std::string &broker_uri,
 {
     // Register callbacks for each command topic
     subscribe(base_topic + "/set/mode", [this](const std::string &payload) {
-        on_mode_command(payload);
+        HAClimateMode mode = static_cast<HAClimateMode>(find_enum_value(payload, kModeStr, sizeof(kModeStr) / sizeof(kModeStr[0])));
+        on_mode_command(mode);
     });
 
     subscribe(base_topic + "/set/temperature", [this](const std::string &payload) {
@@ -26,27 +71,26 @@ MqttHAClimate::MqttHAClimate(const std::string &broker_uri,
         on_temp_command(temp);
     });
 
-    subscribe(base_topic + "/set/power", [this](const std::string &payload) {
-        on_power_command(payload);
-    });
-
     subscribe(base_topic + "/set/fan_mode", [this](const std::string &payload) {
-        on_fan_mode_command(payload);
+        HAClimateFanMode fan_mode = static_cast<HAClimateFanMode>(find_enum_value(payload, kFanModeStr, sizeof(kFanModeStr) / sizeof(kFanModeStr[0])));
+        on_fan_mode_command(fan_mode);
     });
 
     subscribe(base_topic + "/set/swing", [this](const std::string &payload) {
-        on_swing_command(payload);
+        HAClimateVaneMode vane = static_cast<HAClimateVaneMode>(find_enum_value(payload, kSwingStr, sizeof(kSwingStr) / sizeof(kSwingStr[0])));
+        on_vane_command(vane);
     });
 
 }
 
-void MqttHAClimate::on_connected() 
+void HAMqttClimate::on_connected() 
 {
     ESP_LOGI(TAG, "MQTT Connected !");
     publish_autodiscovery();
 }
+
 //https://www.home-assistant.io/integrations/mqtt/
-void MqttHAClimate::publish_autodiscovery()
+bool HAMqttClimate::publish_autodiscovery()
 {
     json j;
 
@@ -85,10 +129,6 @@ void MqttHAClimate::publish_autodiscovery()
     j["temp_step"] = 0.5;
     j["temperature_unit"] = "C";
 
-    // Power
-    j["power_command_topic"] = base_topic + "/set/power";
-    //j["power_template"] = "{{ value_json.power if (value_json is defined and value_json.power is defined and value_json.power|length) else 'off' }}";
-
     // Fan
     j["fan_modes"] = {"auto", "diffuse" /*Quiet*/, "low", "medium", "high"};
     j["fan_mode_command_topic"] = base_topic + "/set/fan_mode";
@@ -107,43 +147,25 @@ void MqttHAClimate::publish_autodiscovery()
     j["action_topic"] = state_topic;
     j["action_template"] = "{{ value_json.action if (value_json is defined and value_json.action is defined and value_json.action|length) else 'idle' }}";
 
-    publish("homeassistant/climate/" + unique_id + "/config", j.dump(), 1, true);
-    
-    ESP_LOGI(TAG, "Published Home Assistant climate auto-discovery");
+    ESP_LOGI(TAG, "Publishing Home Assistant climate auto-discovery");
+    return publish("homeassistant/climate/" + unique_id + "/config", j.dump(), 1, true);
 }
 
 // This should be called whenever AC state changes
-void MqttHAClimate::publish_state(float room_temp, float target_temp, const std::string &power, const std::string &mode, const std::string &fan_mode) 
+bool HAMqttClimate::publish_state(float room_temp, 
+                        float target_temp,
+                        const HAClimateMode &mode, 
+                        const HAClimateFanMode &fan_mode, 
+                        const HAClimateVaneMode &vane_mode,
+                        const HAClimateAction &action) 
 {
-    char payload[512];
-    snprintf(payload, sizeof(payload),
-        "{\"room_temperature\":%.1f,\"target_temperature\":%.1f,\"mode\":\"%s\",\"fan_mode\":\"%s\", \"power\":\"%s\", \"swing\":\"AUTO\", \"action\":\"idle\"}",
-        room_temp, target_temp, mode.c_str(), fan_mode.c_str(), power.c_str());
-    publish(state_topic, payload, 1, false);
-}
+    json j;
+    j["room_temperature"] = room_temp;
+    j["target_temperature"] = target_temp;
+    j["mode"] = kModeStr[mode];
+    j["fan_mode"] = kFanModeStr[fan_mode];
+    j["swing_mode"] = kSwingStr[vane_mode];
+    j["action"] = kActionStr[action];
 
-// These should be implemented in your main code
-void MqttHAClimate::on_mode_command(const std::string& mode) {
-    ESP_LOGI(TAG, "Mode command received: %s", mode.c_str());
-    // TODO: Implement control of AC hardware
-}
-
-void MqttHAClimate::on_temp_command(float temperature) {
-    ESP_LOGI(TAG, "Temperature command received: %.1f", temperature);
-    // TODO: Implement control of AC hardware
-}
-
-void MqttHAClimate::on_fan_mode_command(const std::string& fan_mode) {
-    ESP_LOGI(TAG, "Fan mode command received: %s", fan_mode.c_str());
-    // TODO: Implement control of AC hardware
-}
-
-void MqttHAClimate::on_power_command(const std::string& power) {
-    ESP_LOGI(TAG, "Power command received: %s", power.c_str());
-    // TODO: Implement control of AC hardware
-}
-
-void MqttHAClimate::on_swing_command(const std::string& swing) {
-    ESP_LOGI(TAG, "Swing command received: %s", swing.c_str());
-    // TODO: Implement control of AC hardware
+    return publish(state_topic, j.dump(), 1, false);
 }
