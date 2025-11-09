@@ -12,6 +12,7 @@
 #include "mdns.h"
 #include "mqtt/HAMqttClimateImpl.h"
 #include "climate/MitsubishiClimate.h"
+#include "climate/ToshibaClimate.h"
 #include "iohub.h"
 
 // Example configuration
@@ -176,8 +177,9 @@ extern "C" void app_main(void)
 
 	if (climate == nullptr)
 	{
-		ESP_LOGI(TAG, "Initializing Heatpump Mitsubishi ...");
-		climate = std::make_shared<MitsubishiClimate>(0, 1);
+		ESP_LOGI(TAG, "Initializing Heatpump ...");
+		//climate = std::make_shared<MitsubishiClimate>(0, 1);
+		climate = std::make_shared<ToshibaClimate>(0, 1);
 	}
 	
 	if (!climate->setup())
@@ -185,6 +187,12 @@ extern "C" void app_main(void)
 		ESP_LOGE(TAG, "Failed to setup Mitsubishi Climate interface !");
 		return;
 	}
+
+	climate->lock();
+	climate->setMode(HAClimateMode_Heat);
+	climate->setFanMode(HAClimateFanMode_Auto);
+	climate->setTargetTemperature(22.5f);
+	climate->unlock();
 
 	std::string unique_id = "ac_unit_1";
 	ESP_LOGI(TAG, "Initializing HA Climate MQTT (%s) ...", unique_id.c_str());

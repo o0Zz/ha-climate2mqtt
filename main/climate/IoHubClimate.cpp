@@ -9,9 +9,21 @@ IoHubClimate::IoHubClimate():
     mode(HAClimateMode_Off),
     fan_mode(HAClimateFanMode_Auto),
     action(HAClimateAction_Idle),
-    vane_mode(HAClimateVaneMode_Auto)
+    vane_mode(HAClimateVaneMode_Auto),
+    is_locked(false)
 {
 
+}    
+
+void IoHubClimate::lock()
+{
+    is_locked = true;
+}
+
+void IoHubClimate::unlock()
+{
+    is_locked = false;
+    updateState();
 }
 
 float IoHubClimate::getTargetTemperature() const 
@@ -22,6 +34,10 @@ float IoHubClimate::getTargetTemperature() const
 bool IoHubClimate::setTargetTemperature(float temperature) 
 {
     target_temp = temperature;
+
+    if (is_locked)
+        return true;
+
     return updateState();
 }
 
@@ -33,6 +49,10 @@ HAClimateMode IoHubClimate::getMode() const
 bool IoHubClimate::setMode(HAClimateMode mode) 
 {
     this->mode = mode;
+
+    if (is_locked)
+        return true;
+        
     return updateState();
 }
 
@@ -44,6 +64,10 @@ HAClimateFanMode IoHubClimate::getFanMode() const
 bool IoHubClimate::setFanMode(HAClimateFanMode fanMode) 
 {
     this->fan_mode = fanMode;
+
+    if (is_locked)
+        return true;
+        
     return updateState();
 }
 
@@ -56,6 +80,10 @@ HAClimateVaneMode IoHubClimate::getVaneMode() const
 bool IoHubClimate::setVaneMode(HAClimateVaneMode vaneMode)
 {
     this->vane_mode = vaneMode;
+    
+    if (is_locked)
+        return true;
+
     return updateState();
 }
 

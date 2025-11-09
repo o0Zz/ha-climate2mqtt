@@ -9,6 +9,9 @@ public:
     IoHubClimate();
     virtual ~IoHubClimate() = default;
 
+    void lock() override;
+    void unlock() override;
+
     float getTargetTemperature() const override;
     bool setTargetTemperature(float temperature) override;
 
@@ -28,6 +31,7 @@ protected:
     HAClimateFanMode fan_mode;
     HAClimateAction action;
     HAClimateVaneMode vane_mode;
+    bool is_locked;
 
     virtual bool updateState() = 0;
 

@@ -43,6 +43,9 @@ public:
     virtual bool setup() = 0;
     virtual bool refresh() = 0;
 
+    virtual void lock() = 0;
+    virtual void unlock() = 0;
+
     virtual float getTargetTemperature() const = 0;
     virtual bool setTargetTemperature(float temperature) = 0;
 

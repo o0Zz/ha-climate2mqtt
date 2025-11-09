@@ -4,8 +4,6 @@
 #define TAG "MitsubishiClimate"
 
 MitsubishiClimate::MitsubishiClimate(u8 txPin, u8 rxPin) :
-    heatpumpCtx{},
-    uartCtx{},
     txPin(txPin),
     rxPin(rxPin)
 {
