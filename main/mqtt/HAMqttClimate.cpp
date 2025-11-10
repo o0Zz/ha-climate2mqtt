@@ -141,7 +141,7 @@ bool HAMqttClimate::publish_autodiscovery()
     j["swing_mode_command_topic"] = base_topic + "/set/swing";
     j["swing_mode_state_topic"]   = state_topic;
     j["swing_mode_state_template"] =
-        "{{ value_json.swing if (value_json is defined and value_json.swing is defined and value_json.swing|length) else 'AUTO' }}";
+        "{{ value_json.swing_mode if (value_json is defined and value_json.swing_mode is defined and value_json.swing_mode|length) else 'AUTO' }}";
 
     // Action
     j["action_topic"] = state_topic;
