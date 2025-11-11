@@ -107,7 +107,7 @@ bool HAMqttClimate::publish_autodiscovery()
     };
 
     // Modes
-    j["modes"] = {"off", "cool", "heat", "dry", "fan_only"};
+    j["modes"] = {"off", "cool", "heat", "dry", "fan_only", "auto"};
     j["mode_command_topic"] = base_topic + "/set/mode";
     j["mode_state_topic"]   = state_topic;
     j["mode_state_template"] = "{{ value_json.mode if (value_json is defined and value_json.mode is defined and value_json.mode|length) else 'off' }}";
