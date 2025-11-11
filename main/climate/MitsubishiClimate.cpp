@@ -42,14 +42,14 @@ bool MitsubishiClimate::refresh()
         return false;
     }
 
-    IoHubToHAMqtt(settings, this->fan_mode, this->mode, this->vane_mode, this->target_temp);
+    bool ret = IoHubToHAMqtt(settings, this->fan_mode, this->mode, this->vane_mode, this->target_temp);
 
     float room_temp;
 	if (iohub_heatpump_mitsubishi_get_room_temperature(&heatpumpCtx, &room_temp) == SUCCESS) {
         this->room_temp = room_temp;
     }
 
-    return true;
+    return ret;
 }
 
 bool MitsubishiClimate::updateState() 

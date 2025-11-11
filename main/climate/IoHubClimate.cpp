@@ -87,7 +87,7 @@ bool IoHubClimate::setVaneMode(HAClimateVaneMode vaneMode)
     return updateState();
 }
 
-void IoHubClimate::HAMqttToIoHub(HAClimateFanMode fanMode,
+bool IoHubClimate::HAMqttToIoHub(HAClimateFanMode fanMode,
                         HAClimateMode mode,
                         HAClimateVaneMode vaneMode,
                         float targetTemp,
@@ -165,20 +165,27 @@ void IoHubClimate::HAMqttToIoHub(HAClimateFanMode fanMode,
     }
 
     outParams.mTemperature = static_cast<int>(targetTemp);
+    return true;
 }
 
-void IoHubClimate::IoHubToHAMqtt(const IoHubHeatpumpSettings &inParams,
+bool IoHubClimate::IoHubToHAMqtt(const IoHubHeatpumpSettings &inParams,
                         HAClimateFanMode &outFanMode, 
                         HAClimateMode &outMode,
                         HAClimateVaneMode &outVaneMode,
                         float &outTargetTemp)
 {
-    ESP_LOGD(TAG, "IoHubToHAMqtt IN Action=%d, Mode=%d, FanSpeed=%d, VaneMode=%d, Temp=%d",
+    ESP_LOGI(TAG, "IoHubToHAMqtt IN Action=%d, Mode=%d, FanSpeed=%d, VaneMode=%d, Temp=%d",
                 inParams.mAction,
                 inParams.mMode,
                 inParams.mFanSpeed,
                 inParams.mVaneMode,
                 inParams.mTemperature);
+
+    if (inParams.mAction == HeatpumpAction_Direction) {
+        ESP_LOGD(TAG, "IoHubToHAMqtt Direction mode not supported");
+        return false;
+    }
+
     if (inParams.mAction == HeatpumpAction_OFF) {
         outMode = HAClimateMode_Off;
     }
@@ -231,9 +238,11 @@ void IoHubClimate::IoHubToHAMqtt(const IoHubHeatpumpSettings &inParams,
 
     outTargetTemp = static_cast<float>(inParams.mTemperature);
 
-    ESP_LOGD(TAG, "IoHubToHAMqtt OUT Mode=%d, FanMode=%d, VaneMode=%d, Temp=%d",
+    ESP_LOGI(TAG, "IoHubToHAMqtt OUT Mode=%d, FanMode=%d, VaneMode=%d, Temp=%f",
                 outMode,
                 outFanMode,
                 outVaneMode,
                 outTargetTemp);
+
+    return true;
 }

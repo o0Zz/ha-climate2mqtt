@@ -35,13 +35,13 @@ protected:
 
     virtual bool updateState() = 0;
 
-    void HAMqttToIoHub(HAClimateFanMode fanMode,
+    bool HAMqttToIoHub(HAClimateFanMode fanMode,
                         HAClimateMode mode,
                         HAClimateVaneMode vaneMode,
                         float targetTemp,
                         IoHubHeatpumpSettings &outParams);
 
-    void IoHubToHAMqtt(const IoHubHeatpumpSettings &inParams,
+    bool IoHubToHAMqtt(const IoHubHeatpumpSettings &inParams,
                         HAClimateFanMode &outFanMode, 
                         HAClimateMode &outMode,
                         HAClimateVaneMode &outVaneMode,

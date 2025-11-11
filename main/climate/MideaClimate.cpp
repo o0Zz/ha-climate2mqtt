@@ -47,21 +47,23 @@ bool MideaClimate::refresh()
         return false;
     }
 
-    if (iohub_heatpump_midea_get_state(&heatpumpCtx, &settings) != SUCCESS) {
+    bool ret = false;
+    if (iohub_heatpump_midea_get_state(&heatpumpCtx, &settings) == SUCCESS) 
+    {
+        ret = IoHubToHAMqtt(settings, this->fan_mode, this->mode, this->vane_mode, this->target_temp);
+
+        /*float room_temp;
+        if (iohub_heatpump_midea_get_room_temperature(&heatpumpCtx, &room_temp) == SUCCESS) {
+            this->room_temp = room_temp;
+        }*/
+
+    } else {
         ESP_LOGE(TAG, "Failed to get state from Heatpump Midea");
-        return false;
     }
-
-    IoHubToHAMqtt(settings, this->fan_mode, this->mode, this->vane_mode, this->target_temp);
-
-    /*float room_temp;
-    if (iohub_heatpump_midea_get_room_temperature(&heatpumpCtx, &room_temp) == SUCCESS) {
-        this->room_temp = room_temp;
-    }*/
 
     iohub_digital_async_receiver_packet_handled(&receiverCtx, receiverId);
     
-    return true;
+    return ret;
 }
 
 bool MideaClimate::updateState() 
