@@ -13,7 +13,7 @@ public:
     bool refresh() override;
 
 private:
-    heatpump_mitsubishi_ctx heatpumpCtx;
+    heatpump_mitsubishi heatpumpCtx;
     uart_ctx uartCtx;
     u8 txPin;
     u8 rxPin;

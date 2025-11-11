@@ -13,6 +13,7 @@
 #include "mqtt/HAMqttClimateImpl.h"
 #include "climate/MitsubishiClimate.h"
 #include "climate/ToshibaClimate.h"
+#include "climate/MideaClimate.h"
 #include "iohub.h"
 
 // Example configuration
@@ -153,7 +154,6 @@ esp_err_t mountSPIFFS(const char * partition_label, const char * mount_point) {
 	return ret;
 }
 
-
 extern "C" void app_main(void)
 {
 	ESP_LOGI(TAG, "Initializing flash ...");
@@ -179,7 +179,8 @@ extern "C" void app_main(void)
 	{
 		ESP_LOGI(TAG, "Initializing Heatpump ...");
 		//climate = std::make_shared<MitsubishiClimate>(0, 1);
-		climate = std::make_shared<ToshibaClimate>(0, 1);
+		//climate = std::make_shared<ToshibaClimate>(0, 1);
+		climate = std::make_shared<MideaClimate>(0, 1);
 	}
 	
 	if (!climate->setup())
@@ -188,11 +189,6 @@ extern "C" void app_main(void)
 		return;
 	}
 
-	climate->lock();
-	climate->setMode(HAClimateMode_Heat);
-	climate->setFanMode(HAClimateFanMode_Auto);
-	climate->setTargetTemperature(22.5f);
-	climate->unlock();
 
 	std::string unique_id = "ac_unit_1";
 	ESP_LOGI(TAG, "Initializing HA Climate MQTT (%s) ...", unique_id.c_str());
@@ -201,9 +197,7 @@ extern "C" void app_main(void)
     climateMqtt->start();
 
 	while (true) {
-
 		vTaskDelay(pdMS_TO_TICKS(10000));
-
 
 		ESP_LOGD(TAG, "Refreshing state...");
 		climateMqtt->refresh();

@@ -173,6 +173,12 @@ void IoHubClimate::IoHubToHAMqtt(const IoHubHeatpumpSettings &inParams,
                         HAClimateVaneMode &outVaneMode,
                         float &outTargetTemp)
 {
+    ESP_LOGD(TAG, "IoHubToHAMqtt IN Action=%d, Mode=%d, FanSpeed=%d, VaneMode=%d, Temp=%d",
+                inParams.mAction,
+                inParams.mMode,
+                inParams.mFanSpeed,
+                inParams.mVaneMode,
+                inParams.mTemperature);
     if (inParams.mAction == HeatpumpAction_OFF) {
         outMode = HAClimateMode_Off;
     }
@@ -224,4 +230,10 @@ void IoHubClimate::IoHubToHAMqtt(const IoHubHeatpumpSettings &inParams,
     }
 
     outTargetTemp = static_cast<float>(inParams.mTemperature);
+
+    ESP_LOGD(TAG, "IoHubToHAMqtt OUT Mode=%d, FanMode=%d, VaneMode=%d, Temp=%d",
+                outMode,
+                outFanMode,
+                outVaneMode,
+                outTargetTemp);
 }
