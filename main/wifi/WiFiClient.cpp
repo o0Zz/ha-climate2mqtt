@@ -1,0 +1,153 @@
+
+#include "WiFiClient.h"
+#include "esp_log.h"
+#include "esp_wifi.h"
+#include "esp_event.h"
+
+#define WIFI_CONNECTED_BIT BIT0
+#define WIFI_FAIL_BIT BIT1
+
+static void event_handler_callback(void *arg, esp_event_base_t event_base, int32_t event_id, void* event_data)
+{
+    WiFiClient* client = static_cast<WiFiClient*>(arg);
+    client->event_handler(event_base, event_id, event_data);
+}
+
+void WiFiClient::event_handler(esp_event_base_t event_base, int32_t event_id, void* event_data)
+{
+    if (event_base == WIFI_EVENT && event_id == WIFI_EVENT_STA_START)
+    {
+        esp_wifi_connect();
+    } 
+    else if (event_base == WIFI_EVENT && event_id == WIFI_EVENT_STA_DISCONNECTED) 
+    {
+        if (wifi_event_connect_group != nullptr)
+        {
+            ESP_LOGE(TAG, "WiFi Connection attempt failed %d/%d", retry_num + 1, max_retries);
+            if (++retry_num > max_retries)
+            {
+                xEventGroupSetBits(wifi_event_connect_group, WIFI_FAIL_BIT);
+            }
+            else
+            {
+                esp_wifi_connect();
+            }
+        }
+        else if (auto_reconnect) 
+        {
+            ESP_LOGI(TAG, "WiFi disconnected ! Reconnecting to WiFi access point ...");
+            esp_wifi_connect();
+        }
+    } 
+    else if (event_base == IP_EVENT && event_id == IP_EVENT_STA_GOT_IP) 
+    {
+        ip_event_got_ip_t* event = (ip_event_got_ip_t*) event_data;
+
+        ESP_LOGI(TAG, "Got IP Address:" IPSTR, IP2STR(&event->ip_info.ip));
+        if (wifi_event_connect_group != nullptr)
+            xEventGroupSetBits(wifi_event_connect_group, WIFI_CONNECTED_BIT);
+    }
+}
+
+WiFiClient::WiFiClient() :
+    wifi_event_connect_group(nullptr),
+    retry_num(0),
+    max_retries(0),
+    auto_reconnect(true)
+{
+}
+
+WiFiClient::~WiFiClient()
+{
+}
+
+bool WiFiClient::setup(const std::string &ssid, const std::string &password, int max_retries)
+{
+	esp_err_t err = esp_netif_init();
+    if (err != ESP_OK) {
+        ESP_LOGE(TAG, "esp_netif_init failed: %s", esp_err_to_name(err));
+        return false;
+    }
+
+	err = esp_event_loop_create_default();
+    if (err != ESP_OK) {
+        ESP_LOGE(TAG, "esp_event_loop_create_default failed: %s", esp_err_to_name(err));
+        return false;
+    }
+
+	esp_netif_create_default_wifi_sta();
+
+	wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
+	err = esp_wifi_init(&cfg);
+    if (err != ESP_OK) {
+        ESP_LOGE(TAG, "esp_wifi_init failed: %s", esp_err_to_name(err));
+        return false;
+    }
+
+	esp_event_handler_instance_t instance_any_id;
+	err = esp_event_handler_instance_register(WIFI_EVENT, ESP_EVENT_ANY_ID, &event_handler_callback, NULL, &instance_any_id);
+    if (err != ESP_OK) {
+        ESP_LOGE(TAG, "esp_event_handler_instance_register failed: %s", esp_err_to_name(err));
+        return false;
+    }
+	
+    esp_event_handler_instance_t instance_got_ip;
+    err = esp_event_handler_instance_register(IP_EVENT, IP_EVENT_STA_GOT_IP, &event_handler_callback, NULL, &instance_got_ip);
+    if (err != ESP_OK) {
+        ESP_LOGE(TAG, "esp_event_handler_instance_register failed: %s", esp_err_to_name(err));
+        return false;
+    }
+
+    memset(&wifi_config, 0, sizeof(wifi_config_t));
+	memcpy(wifi_config.sta.ssid, ssid.c_str(), ssid.length());
+	memcpy(wifi_config.sta.password, password.c_str(), password.length());
+	wifi_config.sta.threshold.authmode = WIFI_AUTH_WPA2_PSK;
+	wifi_config.sta.pmf_cfg.capable = true;
+	wifi_config.sta.pmf_cfg.required = false;
+
+	esp_err_t err = esp_wifi_set_mode(WIFI_MODE_STA);
+    if (err != ESP_OK) {
+        ESP_LOGE(TAG, "esp_wifi_set_mode failed: %s", esp_err_to_name(err));
+        return false;
+    }
+
+	err = esp_wifi_set_config(WIFI_IF_STA, &wifi_config);
+    if (err != ESP_OK) {
+        ESP_LOGE(TAG, "esp_wifi_set_config failed: %s", esp_err_to_name(err));
+        return false;
+    }
+
+    ESP_LOGI(TAG, "Connecting to SSID:%s", ssid.c_str());
+}
+
+
+bool WiFiClient::connect()
+{
+    wifi_event_connect_group = xEventGroupCreate();
+    retry_num = 0;
+
+	err = esp_wifi_start();
+    if (err != ESP_OK) {
+        ESP_LOGE(TAG, "esp_wifi_start failed: %s", esp_err_to_name(err));
+        return false;
+    }
+
+	EventBits_t bits = xEventGroupWaitBits(wifi_event_connect_group, WIFI_CONNECTED_BIT | WIFI_FAIL_BIT, pdFALSE, pdFALSE, portMAX_DELAY);
+	if (bits & WIFI_CONNECTED_BIT) {
+		ESP_LOGI(TAG, "Connected to access point SSID:%s password:%s", ssid.c_str(), password.c_str());
+	} else if (bits & WIFI_FAIL_BIT) {
+		ESP_LOGI(TAG, "Failed to connect to SSID:%s, password:%s", ssid.c_str(), password.c_str());
+	} else {
+		ESP_LOGE(TAG, "UNEXPECTED EVENT");
+	}
+
+    vEventGroupDelete(wifi_event_connect_group);
+    wifi_event_connect_group = nullptr;
+}
+
+void WiFiClient::disconnect()
+{
+    auto_reconnect = false;
+    esp_wifi_disconnect();
+    esp_wifi_stop();
+}

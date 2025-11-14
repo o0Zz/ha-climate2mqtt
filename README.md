@@ -1,28 +1,26 @@
 # HA-Climate2MQTT
-
 A lightweight solution for integrating any climate control system with **Home Assistant** via **MQTT** and an **ESP32**
 
 ## ❄️ Supported Climates
-- [ ] Mitsubishi
-- [ ] Toshiba
-- [ ] Midea
+- [X] Mitsubishi (UART)
+- [X] Toshiba (UART) - (Seiya, Shorai, Yukai, ...)
+- [X] Midea (IR protocol)
+- [ ] Daikin
 
 
 ## ⚙️ Supported Features
-
 - [x] HA Auto discovery
-- [ ] Set temperature, mode, power, swing
+- [X] Set temperature, mode, power, swing
 - [ ] AC can be remotly control via WebInterface
 - [ ] Fully configurable from WebInterface
 - [ ] Access point to setup it
+- [ ] Firmware upgrade
 
 
 ## 🧪 Tested Hardware
-
 - [x] ESP32-C6 (https://fr.aliexpress.com/item/1005008953214925.html)
 
 ## 🚀 How to Flash & Run
-
 1. Download the firmware for your microcontroller (In release section)
 2. Wire your AC unit.
 Refer to the documentation in the [doc/](https://github.com/o0Zz/ha-climate2mqtt/tree/main/doc) folder for wiring details.
