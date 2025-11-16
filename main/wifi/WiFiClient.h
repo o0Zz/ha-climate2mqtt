@@ -3,11 +3,11 @@
 #include "esp_event_base.h"
 #include "esp_wifi.h"
 
+#include <string>
+#include <cstdint>
+
 class WiFiClient 
 {
-public:
-    friend void event_handler_callback(void *arg, esp_event_base_t event_base, int32_t event_id, void* event_data);
-
 public:
     WiFiClient();
     ~WiFiClient();
@@ -15,7 +15,7 @@ public:
     bool setup(const std::string &ssid, const std::string &password, int max_retries = 5);
 
     bool connect();
-    bool disconnect();
+    void disconnect();
     bool isConnected() const;
 
 private:
@@ -26,5 +26,6 @@ private:
     bool auto_reconnect = true;
     wifi_config_t wifi_config;
 
+    static void event_handler_callback(void *arg, esp_event_base_t event_base, int32_t event_id, void* event_data);
     void event_handler(esp_event_base_t event_base, int32_t event_id, void* event_data);
 };

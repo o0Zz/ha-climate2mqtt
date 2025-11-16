@@ -4,10 +4,12 @@
 #include "esp_wifi.h"
 #include "esp_event.h"
 
+#define TAG "WiFiClient"
+
 #define WIFI_CONNECTED_BIT BIT0
 #define WIFI_FAIL_BIT BIT1
 
-static void event_handler_callback(void *arg, esp_event_base_t event_base, int32_t event_id, void* event_data)
+void WiFiClient::event_handler_callback(void *arg, esp_event_base_t event_base, int32_t event_id, void* event_data)
 {
     WiFiClient* client = static_cast<WiFiClient*>(arg);
     client->event_handler(event_base, event_id, event_data);
@@ -63,36 +65,24 @@ WiFiClient::~WiFiClient()
 
 bool WiFiClient::setup(const std::string &ssid, const std::string &password, int max_retries)
 {
-	esp_err_t err = esp_netif_init();
-    if (err != ESP_OK) {
-        ESP_LOGE(TAG, "esp_netif_init failed: %s", esp_err_to_name(err));
-        return false;
-    }
-
-	err = esp_event_loop_create_default();
-    if (err != ESP_OK) {
-        ESP_LOGE(TAG, "esp_event_loop_create_default failed: %s", esp_err_to_name(err));
-        return false;
-    }
-
-	esp_netif_create_default_wifi_sta();
+    esp_netif_create_default_wifi_sta();
 
 	wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
-	err = esp_wifi_init(&cfg);
+	esp_err_t err = esp_wifi_init(&cfg);
     if (err != ESP_OK) {
         ESP_LOGE(TAG, "esp_wifi_init failed: %s", esp_err_to_name(err));
         return false;
     }
 
 	esp_event_handler_instance_t instance_any_id;
-	err = esp_event_handler_instance_register(WIFI_EVENT, ESP_EVENT_ANY_ID, &event_handler_callback, NULL, &instance_any_id);
+	err = esp_event_handler_instance_register(WIFI_EVENT, ESP_EVENT_ANY_ID, &WiFiClient::event_handler_callback, this, &instance_any_id);
     if (err != ESP_OK) {
         ESP_LOGE(TAG, "esp_event_handler_instance_register failed: %s", esp_err_to_name(err));
         return false;
     }
 	
     esp_event_handler_instance_t instance_got_ip;
-    err = esp_event_handler_instance_register(IP_EVENT, IP_EVENT_STA_GOT_IP, &event_handler_callback, NULL, &instance_got_ip);
+    err = esp_event_handler_instance_register(IP_EVENT, IP_EVENT_STA_GOT_IP, &WiFiClient::event_handler_callback, this, &instance_got_ip);
     if (err != ESP_OK) {
         ESP_LOGE(TAG, "esp_event_handler_instance_register failed: %s", esp_err_to_name(err));
         return false;
@@ -105,7 +95,7 @@ bool WiFiClient::setup(const std::string &ssid, const std::string &password, int
 	wifi_config.sta.pmf_cfg.capable = true;
 	wifi_config.sta.pmf_cfg.required = false;
 
-	esp_err_t err = esp_wifi_set_mode(WIFI_MODE_STA);
+	err = esp_wifi_set_mode(WIFI_MODE_STA);
     if (err != ESP_OK) {
         ESP_LOGE(TAG, "esp_wifi_set_mode failed: %s", esp_err_to_name(err));
         return false;
@@ -117,16 +107,19 @@ bool WiFiClient::setup(const std::string &ssid, const std::string &password, int
         return false;
     }
 
-    ESP_LOGI(TAG, "Connecting to SSID:%s", ssid.c_str());
+    this->max_retries = max_retries;
+    return true;
 }
 
 
 bool WiFiClient::connect()
 {
+    ESP_LOGI(TAG, "Connecting to SSID:%s", wifi_config.sta.ssid);
+
     wifi_event_connect_group = xEventGroupCreate();
     retry_num = 0;
 
-	err = esp_wifi_start();
+	esp_err_t err = esp_wifi_start();
     if (err != ESP_OK) {
         ESP_LOGE(TAG, "esp_wifi_start failed: %s", esp_err_to_name(err));
         return false;
@@ -134,15 +127,17 @@ bool WiFiClient::connect()
 
 	EventBits_t bits = xEventGroupWaitBits(wifi_event_connect_group, WIFI_CONNECTED_BIT | WIFI_FAIL_BIT, pdFALSE, pdFALSE, portMAX_DELAY);
 	if (bits & WIFI_CONNECTED_BIT) {
-		ESP_LOGI(TAG, "Connected to access point SSID:%s password:%s", ssid.c_str(), password.c_str());
+		ESP_LOGI(TAG, "Connected to access point SSID:%s password:%s", wifi_config.sta.ssid, wifi_config.sta.password);
 	} else if (bits & WIFI_FAIL_BIT) {
-		ESP_LOGI(TAG, "Failed to connect to SSID:%s, password:%s", ssid.c_str(), password.c_str());
+		ESP_LOGI(TAG, "Failed to connect to SSID:%s, password:%s", wifi_config.sta.ssid, wifi_config.sta.password);
 	} else {
 		ESP_LOGE(TAG, "UNEXPECTED EVENT");
 	}
 
     vEventGroupDelete(wifi_event_connect_group);
     wifi_event_connect_group = nullptr;
+
+    return (bits & WIFI_CONNECTED_BIT) != 0;
 }
 
 void WiFiClient::disconnect()

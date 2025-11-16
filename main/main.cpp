@@ -6,10 +6,12 @@
 #include "freertos/queue.h"
 #include "freertos/event_groups.h"
 
-#include "esp_log.h"
 #include "iohub.h"
 
+#include "webserver/WebServer.h"
+
 #include "mqtt/HAMqttClimateImpl.h"
+
 #include "climate/MitsubishiClimate.h"
 #include "climate/ToshibaClimate.h"
 #include "climate/MideaClimate.h"
@@ -23,24 +25,39 @@
 
 static const char *TAG = "MAIN";
 
+#define AP_TIMEOUT_MS 60000	
+
 extern "C" void app_main(void)
 {
 	iohub_platform_init();
 
-	IConfig *config = new EspNVSConfig();
-	if (!config->load()) {
+	EspNVSConfig config;
+	if (!config.load()) {
 		ESP_LOGE(TAG, "Failed to load configuration from NVS");
 		return;
 	}
 
+    esp_err_t err = esp_netif_init();
+    if (err != ESP_OK) {
+        ESP_LOGE(TAG, "esp_netif_init failed: %s", esp_err_to_name(err));
+    }
+
+	err = esp_event_loop_create_default();
+    if (err != ESP_OK && err != ESP_ERR_INVALID_STATE) {
+        ESP_LOGE(TAG, "esp_event_loop_create_default failed: %s", esp_err_to_name(err));
+    }	
+    
+	WebServer webServer(config);
+	webServer.start(80);  // Start on port 80
+
 	WiFiClient wifiClient;
 
-	if (!wifiClient.setup(config->getString(CONF_WIFI_SSID), config->getString(CONF_WIFI_PASSWORD))) {
+	if (!wifiClient.setup(config.getString(CONF_WIFI_SSID), config.getString(CONF_WIFI_PASSWORD))) {
 		ESP_LOGE(TAG, "Failed to setup WiFi client");
 		return;
 	}
 
-	if (!wifiClient.connect()) {
+	if (config.getString(CONF_WIFI_SSID) == "" || !wifiClient.connect()) {
 		ESP_LOGE(TAG, "Failed to connect to WiFi, creating access point for 1 min then reboot...");
 		
 		WiFiAccessPoint wifiAP;
@@ -54,12 +71,15 @@ extern "C" void app_main(void)
 			return;
 		}
 
-		for (int i = 0; i < 60; i++) {
-			ESP_LOGI(TAG, "Access Point active for configuration (%d seconds remaining)...", 60 - i);
-			vTaskDelay(pdMS_TO_TICKS(1000));
+
+		u32 timeout_start = IOHUB_TIMER_START();
+		while (IOHUB_TIMER_ELAPSED(timeout_start) < AP_TIMEOUT_MS)
+		{
+			ESP_LOGI(TAG, "Access Point active for configuration (%d seconds remaining)...", (AP_TIMEOUT_MS - IOHUB_TIMER_ELAPSED(timeout_start)) / 1000);
+			vTaskDelay(pdMS_TO_TICKS(5000));
 
 			if (wifiAP.clientCountConnected() > 0)
-				i = 0; // Reset timer if a client is connected
+				timeout_start = IOHUB_TIMER_START(); // Reset timer if a client is connected
 		}
 
 		ESP_LOGI(TAG, "Rebooting to apply configuration...");
@@ -68,25 +88,25 @@ extern "C" void app_main(void)
 
 	
 	std::shared_ptr<IClimate> climate = nullptr;
-	if (config->getInt32("climate_type", 1) == 1)
+	if (config.getInt32("climate_type", 1) == 1)
 	{
 		ESP_LOGI(TAG, "Using Mitsubishi Climate interface");
-		climate = std::make_shared<MitsubishiClimate>(config->getInt32(CONF_CLIMATE_UART_TX_PIN, 0), config->getInt32(CONF_CLIMATE_UART_RX_PIN, 1));
+		climate = std::make_shared<MitsubishiClimate>(config.getInt32(CONF_CLIMATE_UART_TX_PIN, 0), config.getInt32(CONF_CLIMATE_UART_RX_PIN, 1));
 	}
-	else if (config->getInt32("climate_type", 1) == 2)
+	else if (config.getInt32("climate_type", 1) == 2)
 	{
 		ESP_LOGI(TAG, "Using Toshiba Climate interface");
-		climate = std::make_shared<ToshibaClimate>(config->getInt32(CONF_CLIMATE_UART_TX_PIN, 0), config->getInt32(CONF_CLIMATE_UART_RX_PIN, 1));
+		climate = std::make_shared<ToshibaClimate>(config.getInt32(CONF_CLIMATE_UART_TX_PIN, 0), config.getInt32(CONF_CLIMATE_UART_RX_PIN, 1));
 	}
-	else if (config->getInt32("climate_type", 1) == 3)
+	else if (config.getInt32("climate_type", 1) == 3)
 	{
 		ESP_LOGI(TAG, "Using Midea Climate interface");
-		climate = std::make_shared<MideaClimate>(config->getInt32(CONF_CLIMATE_UART_TX_PIN, 0), config->getInt32(CONF_CLIMATE_UART_RX_PIN, 1));
+		climate = std::make_shared<MideaClimate>(config.getInt32(CONF_CLIMATE_UART_TX_PIN, 0), config.getInt32(CONF_CLIMATE_UART_RX_PIN, 1));
 	}
 	else
 	{
 		ESP_LOGE(TAG, "Invalid climate_type configuration !");
-		climate = std::make_shared<EmptyClimate>(0, 1);
+		climate = std::make_shared<EmptyClimate>();
 	}
 
 	if (!climate->setup())
@@ -95,14 +115,14 @@ extern "C" void app_main(void)
 		return;
 	}
 
-	std::string unique_id = config->getString(CONF_MQTT_UNIQUE_ID, "ac_unit_1");
+	std::string unique_id = config.getString(CONF_MQTT_UNIQUE_ID, "ac_unit_1");
 	ESP_LOGI(TAG, "Initializing HA Climate MQTT (%s) ...", unique_id.c_str());
 
-	HAMqttClimateImpl *climateMqtt = new HAMqttClimateImpl(climate, config->getString(CONF_MQTT_BROKER_URI), config->getString(CONF_MQTT_USER), config->getString(CONF_MQTT_PASSWORD), std::string("climate2mqtt/") + unique_id, unique_id);
+	HAMqttClimateImpl *climateMqtt = new HAMqttClimateImpl(climate, config.getString(CONF_MQTT_BROKER_URI), config.getString(CONF_MQTT_USER), config.getString(CONF_MQTT_PASSWORD), std::string("climate2mqtt/") + unique_id, unique_id);
     climateMqtt->start();
 
 	while (true) {
-		vTaskDelay(pdMS_TO_TICKS(config->getInt32(CONF_CLIMATE_POLLING_MS, 1000)));
+		vTaskDelay(pdMS_TO_TICKS(config.getInt32(CONF_CLIMATE_POLLING_MS, 1000)));
 
 		//ESP_LOGD(TAG, "Refreshing state...");
 		climateMqtt->refresh();

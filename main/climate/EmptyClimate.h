@@ -8,6 +8,10 @@ public:
     EmptyClimate() = default;
     ~EmptyClimate() override = default;
 
+    void lock() override { }
+    void unlock() override { }
+
+    bool setup() override { return true; }
     bool refresh() override { return true; }
 
     float getTargetTemperature() const override { return 0.0f; }

@@ -1,5 +1,8 @@
 #pragma once
 
+#include <string>
+#include <cstdint>
+
 class IConfig {
 public:
     virtual ~IConfig() = default;

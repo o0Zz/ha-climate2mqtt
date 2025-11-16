@@ -36,21 +36,17 @@ bool EspNVSConfig::clear()
 
 int32_t EspNVSConfig::getInt32(const char* key, int32_t defaultValue) const
 {
-    int32_t value = 0;
-    esp_err_t err = nvs_get_i32(mNvsHandle, key, &value);
-    if (err != ESP_OK) {
+    std::string value = getString(key, std::to_string(defaultValue));
+    if (value.empty()) {
         return defaultValue;
     }
-    return value;
-}
+    
+    return atoi(value.c_str());
+}   
 
 bool EspNVSConfig::setInt32(const char* key, int32_t value)
 {
-    esp_err_t err = nvs_set_i32(mNvsHandle, key, value);
-    if (err != ESP_OK) {
-        return false;
-    }
-    return save();
+    return setString(key, std::to_string(value));
 }
 
 const std::string EspNVSConfig::getString(const char* key, const std::string &defaultValue) const
@@ -72,6 +68,6 @@ bool EspNVSConfig::setString(const char* key, const std::string &value)
     if (err != ESP_OK) {
         return false;
     }
-    return commitChanges();
+    return save();
 }
 
