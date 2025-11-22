@@ -20,6 +20,8 @@
 #include "pages/Climate.h"
 #include "pages/Saved.h"
 #include "pages/Upgrade.h"
+#include "pages/Reboot.h"
+#include "pages/ClearConfig.h"
 
 #define TAG "WebServer"
 
@@ -33,13 +35,15 @@ struct RouteDef {
 
     //All routes definition
 const RouteDef routes[] = {
-    {"/",        HTTP_GET,  WEB_HOME_TITLE, WEB_HOME_BODY},
-    {"/wifi",    HTTP_GET,  WEB_WIFI_TITLE, WEB_WIFI_BODY},
-    {"/mqtt",    HTTP_GET,  WEB_MQTT_TITLE, WEB_MQTT_BODY},
-    {"/climate", HTTP_GET,  WEB_CLIMATE_TITLE, WEB_CLIMATE_BODY},
-    {"/save",    HTTP_POST, WEB_SAVED_TITLE, WEB_SAVED_BODY},
-    {"/upgrade", HTTP_GET,  WEB_UPGRADE_TITLE, WEB_UPGRADE_BODY},
-    {"/api/upgrade", HTTP_POST, nullptr, nullptr},
+    {"/",               HTTP_GET,  WEB_HOME_TITLE, WEB_HOME_BODY},
+    {"/wifi",           HTTP_GET,  WEB_WIFI_TITLE, WEB_WIFI_BODY},
+    {"/mqtt",           HTTP_GET,  WEB_MQTT_TITLE, WEB_MQTT_BODY},
+    {"/climate",        HTTP_GET,  WEB_CLIMATE_TITLE, WEB_CLIMATE_BODY},
+    {"/save",           HTTP_POST, WEB_SAVED_TITLE, WEB_SAVED_BODY},
+    {"/reboot",         HTTP_POST, WEB_REBOOT_TITLE, WEB_REBOOT_BODY},
+    {"/clear_config",   HTTP_POST, WEB_CLEAR_CONFIG_TITLE, WEB_CLEAR_CONFIG_BODY},
+    {"/upgrade",        HTTP_GET,  WEB_UPGRADE_TITLE, WEB_UPGRADE_BODY},
+    {"/upgrade",        HTTP_POST, nullptr, nullptr},
 };
 
 WebServer::WebServer(IConfig &config) : 
@@ -63,6 +67,22 @@ esp_err_t WebServer::serve(httpd_req_t *req, const char *title, const std::strin
             break;
         vars[key] = config.getString(key, "");
     }
+    
+    for (const auto& kv : ConfigValueList) 
+    {
+        const char* const* list = kv.second;
+        if (list != nullptr) 
+        {
+            std::string options;
+            for (int i = 0; list[i] != nullptr; ++i) 
+            {
+                options += list[i];
+                if (list[i + 1] != nullptr)
+                    options += ",";
+            }
+            vars[kv.first] = options;
+        }
+    }
 
     vars["title"] = title;
 
@@ -80,7 +100,7 @@ esp_err_t WebServer::request_handler(httpd_req_t *req)
 
     ESP_LOGI(TAG, "HTTP Method: %d Uri: %s", req->method, req->uri);
     if (req->method == HTTP_POST) {
-        if (std::string(req->uri) == "/api/upgrade") 
+        if (std::string(req->uri) == "/upgrade") 
         {
             char buf[HTTP_CHUNK_SIZE];
 
@@ -143,14 +163,17 @@ esp_err_t WebServer::request_handler(httpd_req_t *req)
             if (err == ESP_OK) {
                 ESP_LOGI(TAG, "OTA set boot partition successful");
                 httpd_resp_sendstr(req, "Upgrade successful. Rebooting...");
-                vTaskDelay(1000 / portTICK_PERIOD_MS);
+                vTaskDelay(pdMS_TO_TICKS(2000));
                 esp_restart();
             } else {
                 ESP_LOGE(TAG, "OTA set boot partition failed: %s", esp_err_to_name(err));
                 httpd_resp_send_err(req, HTTPD_500_INTERNAL_SERVER_ERROR, "OTA set boot failed");
             }
             return err;
-        } else {
+
+        } 
+        else if (std::string(req->uri) == "/save") 
+        {
             //Save posted settings
             auto form = UrlUtils::parse_urlencoded_form(req);
             for (const auto& kv : form) 
@@ -159,10 +182,28 @@ esp_err_t WebServer::request_handler(httpd_req_t *req)
                 {
                     if (key == nullptr)
                         break;
+
                     if (kv.first == key) {
+                        ESP_LOGI(TAG, "Saving config key: %s value: %s", kv.first.c_str(), kv.second.c_str());
                         webServer->config.setString(kv.first.c_str(), kv.second.c_str());
                     }
                 }
+            }
+        }
+        else if (std::string(req->uri) == "/reboot") 
+        {
+            (void)webServer->serve(req, WEB_REBOOT_TITLE, WEB_REBOOT_BODY);
+            vTaskDelay(pdMS_TO_TICKS(2000));
+            esp_restart();
+            return ESP_OK;
+        }
+        else if (std::string(req->uri) == "/clear_config")
+        {
+            if (!webServer->config.clear())
+            {
+                ESP_LOGE(TAG, "Failed to clear configuration");
+                httpd_resp_send_err(req, HTTPD_500_INTERNAL_SERVER_ERROR, "Failed to clear configuration");
+                return ESP_FAIL;
             }
         }
     }
@@ -175,7 +216,6 @@ esp_err_t WebServer::request_handler(httpd_req_t *req)
 
     // Default to home page
     return webServer->serve(req, WEB_HOME_TITLE, WEB_HOME_BODY);
-
 }
 
 bool WebServer::start(uint16_t port)

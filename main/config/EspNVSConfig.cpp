@@ -1,4 +1,7 @@
 #include "EspNVSConfig.h"
+#include "esp_log.h"
+
+#define TAG "EspNVSConfig"
 
 EspNVSConfig::EspNVSConfig()
     : mNvsHandle(0)
@@ -29,6 +32,7 @@ bool EspNVSConfig::clear()
 {
     esp_err_t err = nvs_erase_all(mNvsHandle);
     if (err != ESP_OK) {
+        ESP_LOGE(TAG, "Failed to erase all NVS data: %s", esp_err_to_name(err));
         return false;
     }
     return save();
@@ -38,6 +42,7 @@ int32_t EspNVSConfig::getInt32(const char* key, int32_t defaultValue) const
 {
     std::string value = getString(key, std::to_string(defaultValue));
     if (value.empty()) {
+        //ESP_LOGE(TAG, "Failed to get int32 for key %s, returning default value %d", key, defaultValue);
         return defaultValue;
     }
     
@@ -56,6 +61,7 @@ const std::string EspNVSConfig::getString(const char* key, const std::string &de
     
     esp_err_t err = nvs_get_str(mNvsHandle, key, valueBuffer, &bufferSize);
     if (err != ESP_OK || bufferSize == 0) {
+        //ESP_LOGE(TAG, "Failed to get string for key %s: %s", key, esp_err_to_name(err));
         return defaultValue;
     }
     
@@ -66,6 +72,7 @@ bool EspNVSConfig::setString(const char* key, const std::string &value)
 {
     esp_err_t err = nvs_set_str(mNvsHandle, key, value.c_str());
     if (err != ESP_OK) {
+        ESP_LOGE(TAG, "Failed to set string for key %s: %s", key, esp_err_to_name(err));
         return false;
     }
     return save();

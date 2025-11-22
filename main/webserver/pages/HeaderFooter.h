@@ -16,7 +16,7 @@ static const char* WEB_COMMON_HEAD =
 "    .config-label { font-weight: bold; color: #007bff; }\n"
 "    .config-value { color: #333; margin-left: 10px; }\n"
 "    label { display:block; margin:12px 0 4px; font-weight:bold; }\n"
-"    input[type=text], input[type=password] { width:100%; padding:8px; box-sizing:border-box; border:1px solid #ccc; border-radius:4px; }\n"
+"    input[type=text], input[type=password], select { width:100%; padding:8px; box-sizing:border-box; border:1px solid #ccc; border-radius:4px; }\n"
 "    .actions { margin-top:20px; display:flex; flex-direction:column; gap:10px; }\n"
 "    .actions-center { justify-content:center; }\n"
 "    .actions-center button { width:auto; min-width:140px; }\n"
@@ -26,6 +26,9 @@ static const char* WEB_COMMON_HEAD =
 "    .icon { color: #fff; font-size: 1.5em; vertical-align: middle; margin-right: 8px; }\n"
 "    .icon svg { vertical-align: middle; margin-right: 8px; }\n"
 "  </style>\n"
+"  <script>\n"
+"    function init_select(id,o,s){o.split(',').map(function(n,i){return `<option value='${i}'${i==s?' selected':''}>${n.trim()}</option>`}).forEach(function(opt){document.getElementById(id).insertAdjacentHTML('beforeend',opt)})}\n"
+"  </script>\n"
 "</head>\n"
 "<body>\n"
 "  <div class=\"container\">\n";

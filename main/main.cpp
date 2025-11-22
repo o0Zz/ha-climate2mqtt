@@ -90,17 +90,17 @@ extern "C" void app_main(void)
 	if (config.getInt32("climate_type", 1) == 1)
 	{
 		ESP_LOGI(TAG, "Using Mitsubishi Climate interface");
-		climate = std::make_shared<MitsubishiClimate>(config.getInt32(CONF_CLIMATE_UART_TX_PIN, 0), config.getInt32(CONF_CLIMATE_UART_RX_PIN, 1));
+		climate = std::make_shared<MitsubishiClimate>(config.getInt32(CONF_CLIMATE_TX_PIN), config.getInt32(CONF_CLIMATE_RX_PIN));
 	}
 	else if (config.getInt32("climate_type", 1) == 2)
 	{
 		ESP_LOGI(TAG, "Using Toshiba Climate interface");
-		climate = std::make_shared<ToshibaClimate>(config.getInt32(CONF_CLIMATE_UART_TX_PIN, 0), config.getInt32(CONF_CLIMATE_UART_RX_PIN, 1));
+		climate = std::make_shared<ToshibaClimate>(config.getInt32(CONF_CLIMATE_TX_PIN), config.getInt32(CONF_CLIMATE_RX_PIN));
 	}
 	else if (config.getInt32("climate_type", 1) == 3)
 	{
 		ESP_LOGI(TAG, "Using Midea Climate interface");
-		climate = std::make_shared<MideaClimate>(config.getInt32(CONF_CLIMATE_UART_TX_PIN, 0), config.getInt32(CONF_CLIMATE_UART_RX_PIN, 1));
+		climate = std::make_shared<MideaClimate>(config.getInt32(CONF_CLIMATE_TX_PIN), config.getInt32(CONF_CLIMATE_RX_PIN));
 	}
 	else
 	{
