@@ -16,6 +16,7 @@ public:
 
     bool connect();
     void disconnect();
+
     bool isConnected() const;
 
 private:
@@ -24,6 +25,7 @@ private:
     int retry_num = 0;
     int max_retries = 0;
     bool auto_reconnect = true;
+    bool connected = false;
     wifi_config_t wifi_config;
 
     static void event_handler_callback(void *arg, esp_event_base_t event_base, int32_t event_id, void* event_data);

@@ -2,6 +2,7 @@
 
 #define CONF_WIFI_SSID "wifi_ssid"
 #define CONF_WIFI_PASSWORD "wifi_password"
+#define CONF_WIFI_SECURITY_TYPE "wifi_security_type"
 
 #define CONF_CLIMATE_TYPE "climate_type"
 #define CONF_CLIMATE_POLLING_MS "climate_polling_ms"

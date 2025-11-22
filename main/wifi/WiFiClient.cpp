@@ -23,6 +23,8 @@ void WiFiClient::event_handler(esp_event_base_t event_base, int32_t event_id, vo
     } 
     else if (event_base == WIFI_EVENT && event_id == WIFI_EVENT_STA_DISCONNECTED) 
     {
+        connected = false;
+        
         if (wifi_event_connect_group != nullptr)
         {
             ESP_LOGE(TAG, "WiFi Connection attempt failed %d/%d", retry_num + 1, max_retries);
@@ -43,6 +45,8 @@ void WiFiClient::event_handler(esp_event_base_t event_base, int32_t event_id, vo
     } 
     else if (event_base == IP_EVENT && event_id == IP_EVENT_STA_GOT_IP) 
     {
+        connected = true;
+        
         ip_event_got_ip_t* event = (ip_event_got_ip_t*) event_data;
 
         ESP_LOGI(TAG, "Got IP Address:" IPSTR, IP2STR(&event->ip_info.ip));
@@ -114,6 +118,16 @@ bool WiFiClient::setup(const std::string &ssid, const std::string &password, int
 
 bool WiFiClient::connect()
 {
+    if (isConnected()) {
+        ESP_LOGI(TAG, "Already connected to WiFi SSID:%s", wifi_config.sta.ssid);
+        return true;
+    }
+
+    if (wifi_config.sta.ssid[0] == '\0') {
+        ESP_LOGE(TAG, "WiFi SSID is empty. Cannot connect.");
+        return false;
+    }
+
     ESP_LOGI(TAG, "Connecting to SSID:%s", wifi_config.sta.ssid);
 
     wifi_event_connect_group = xEventGroupCreate();
@@ -145,4 +159,9 @@ void WiFiClient::disconnect()
     auto_reconnect = false;
     esp_wifi_disconnect();
     esp_wifi_stop();
+}
+
+bool WiFiClient::isConnected() const
+{
+    return connected;
 }

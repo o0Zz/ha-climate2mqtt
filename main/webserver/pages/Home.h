@@ -8,6 +8,7 @@ static const char* WEB_HOME_BODY =
 "      <button type=\"button\" onclick=\"window.location='/wifi'\">Configure WiFi</button>\n"
 "      <button type=\"button\" onclick=\"window.location='/mqtt'\">Configure MQTT</button>\n"
 "      <button type=\"button\" onclick=\"window.location='/climate'\">Configure Climate</button>\n"
+"      <button type=\"button\" onclick=\"window.location='/upgrade'\">Upgrade Firmware</button>\n"
 "    </div>\n"
 "    <h2>Current Configuration</h2>\n"
 "    <div class=\"config-item\">\n"

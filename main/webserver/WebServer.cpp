@@ -1,5 +1,9 @@
 #include "WebServer.h"
 #include "esp_log.h"
+#include "esp_system.h"
+#include "esp_partition.h"
+#include "esp_ota_ops.h"
+
 #include <sstream>
 #include <map>
 #include <cctype>
@@ -15,9 +19,11 @@
 #include "pages/MQTT.h"
 #include "pages/Climate.h"
 #include "pages/Saved.h"
+#include "pages/Upgrade.h"
 
 #define TAG "WebServer"
 
+#define HTTP_CHUNK_SIZE 1024
 struct RouteDef {
     const char* uri;
     httpd_method_t method;
@@ -32,6 +38,8 @@ const RouteDef routes[] = {
     {"/mqtt",    HTTP_GET,  WEB_MQTT_TITLE, WEB_MQTT_BODY},
     {"/climate", HTTP_GET,  WEB_CLIMATE_TITLE, WEB_CLIMATE_BODY},
     {"/save",    HTTP_POST, WEB_SAVED_TITLE, WEB_SAVED_BODY},
+    {"/upgrade", HTTP_GET,  WEB_UPGRADE_TITLE, WEB_UPGRADE_BODY}, // Serve upgrade UI
+    {"/api/upgrade", HTTP_POST, nullptr, nullptr}, // Firmware upload endpoint
 };
 
 WebServer::WebServer(IConfig &config) : 
@@ -70,19 +78,90 @@ esp_err_t WebServer::request_handler(httpd_req_t *req)
     //Generic get handler that serves all pages
     WebServer* webServer = static_cast<WebServer*>(req->user_ctx);
 
-    if (req->method == HTTP_POST) 
-    {
-            //Save posted settings
-        auto form = UrlUtils::parse_urlencoded_form(req);
-        for (const auto& kv : form) 
+    ESP_LOGI(TAG, "HTTP Method: %d Uri: %s", req->method, req->uri);
+    if (req->method == HTTP_POST) {
+        if (std::string(req->uri) == "/api/upgrade") 
         {
-            for (const char* key : ConfigList) 
+            char buf[HTTP_CHUNK_SIZE];
+
+            ESP_LOGI(TAG, "OTA: Searching for the next upgrade partition ...");
+            const esp_partition_t *update_partition = esp_ota_get_next_update_partition(NULL);
+            if (!update_partition) {
+                ESP_LOGE(TAG, "No OTA partition found !");
+                httpd_resp_send_err(req, HTTPD_500_INTERNAL_SERVER_ERROR, "No OTA partition");
+                return ESP_FAIL;
+            }
+
+            ESP_LOGI(TAG, "OTA: Beginning ...");
+            size_t max_fw_size = update_partition->size;
+            esp_ota_handle_t ota_handle = 0;
+            esp_err_t err = esp_ota_begin(update_partition, OTA_SIZE_UNKNOWN, &ota_handle);
+            if (err != ESP_OK) {
+                ESP_LOGE(TAG, "OTA begin failed: %s", esp_err_to_name(err));
+                httpd_resp_send_err(req, HTTPD_500_INTERNAL_SERVER_ERROR, "OTA begin failed");
+                return err;
+            }
+
+            size_t total = 0;
+            int received = 0;
+            while (total < max_fw_size) 
             {
-                if (key == nullptr) 
+                received = httpd_req_recv(req, buf, HTTP_CHUNK_SIZE);
+                if (received <= 0) 
                     break;
 
-                if (kv.first == key) {
-                    webServer->config.setString(kv.first.c_str(), kv.second.c_str());
+                err = esp_ota_write(ota_handle, buf, received);
+                if (err != ESP_OK) {
+                    esp_ota_end(ota_handle);
+                    httpd_resp_send_err(req, HTTPD_500_INTERNAL_SERVER_ERROR, "OTA write failed");
+                    return err;
+                }
+
+                ESP_LOGI(TAG, "OTA: Wrote %d bytes", received);
+                total += received;
+            }
+
+            ESP_LOGI(TAG, "OTA: Finished to received data, total: %d bytes", total);
+            if (total == 0) 
+            {
+                esp_ota_end(ota_handle);
+                httpd_resp_send_err(req, HTTPD_400_BAD_REQUEST, "No firmware received");
+                return ESP_FAIL;
+            }
+            
+            ESP_LOGI(TAG, "OTA: Ending...");
+            err = esp_ota_end(ota_handle);
+            if (err != ESP_OK) 
+            {
+                ESP_LOGE(TAG, "OTA end failed: %s", esp_err_to_name(err));
+                httpd_resp_send_err(req, HTTPD_500_INTERNAL_SERVER_ERROR, "OTA end failed");
+                return err;
+            }
+
+            ESP_LOGI(TAG, "OTA: Switching boot partition...");
+            err = esp_ota_set_boot_partition(update_partition);
+            if (err == ESP_OK) {
+                ESP_LOGI(TAG, "OTA set boot partition successful");
+                httpd_resp_sendstr(req, "Upgrade successful. Rebooting...");
+                vTaskDelay(1000 / portTICK_PERIOD_MS);
+                esp_restart();
+            } else {
+                ESP_LOGE(TAG, "OTA set boot partition failed: %s", esp_err_to_name(err));
+                httpd_resp_send_err(req, HTTPD_500_INTERNAL_SERVER_ERROR, "OTA set boot failed");
+            }
+            return err;
+        } else {
+            //Save posted settings
+            auto form = UrlUtils::parse_urlencoded_form(req);
+            for (const auto& kv : form) 
+            {
+                for (const char* key : ConfigList) 
+                {
+                    if (key == nullptr)
+                        break;
+                    if (kv.first == key) {
+                        webServer->config.setString(kv.first.c_str(), kv.second.c_str());
+                    }
                 }
             }
         }
@@ -96,6 +175,7 @@ esp_err_t WebServer::request_handler(httpd_req_t *req)
 
     // Default to home page
     return webServer->serve(req, WEB_HOME_TITLE, WEB_HOME_BODY);
+
 }
 
 bool WebServer::start(uint16_t port)

@@ -57,7 +57,7 @@ extern "C" void app_main(void)
 		return;
 	}
 
-	if (config.getString(CONF_WIFI_SSID) == "" || !wifiClient.connect()) {
+	if (!wifiClient.connect()) {
 		ESP_LOGE(TAG, "Failed to connect to WiFi, creating access point for 1 min then reboot...");
 		
 		WiFiAccessPoint wifiAP;
@@ -70,7 +70,6 @@ extern "C" void app_main(void)
 			ESP_LOGE(TAG, "Failed to create WiFi access point");
 			return;
 		}
-
 
 		u32 timeout_start = IOHUB_TIMER_START();
 		while (IOHUB_TIMER_ELAPSED(timeout_start) < AP_TIMEOUT_MS)
