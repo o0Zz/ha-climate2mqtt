@@ -35,4 +35,5 @@ const char WEB_UPGRADE_BODY[] =
 "        };\n"
 "        xhr.send(file);\n"
 "    };\n"
-"    </script>\n";
+"    </script>\n"
+"    <a href=\"/\" class=\"back\">&larr; Back to Home</a>\n";

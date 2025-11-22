@@ -38,8 +38,8 @@ const RouteDef routes[] = {
     {"/mqtt",    HTTP_GET,  WEB_MQTT_TITLE, WEB_MQTT_BODY},
     {"/climate", HTTP_GET,  WEB_CLIMATE_TITLE, WEB_CLIMATE_BODY},
     {"/save",    HTTP_POST, WEB_SAVED_TITLE, WEB_SAVED_BODY},
-    {"/upgrade", HTTP_GET,  WEB_UPGRADE_TITLE, WEB_UPGRADE_BODY}, // Serve upgrade UI
-    {"/api/upgrade", HTTP_POST, nullptr, nullptr}, // Firmware upload endpoint
+    {"/upgrade", HTTP_GET,  WEB_UPGRADE_TITLE, WEB_UPGRADE_BODY},
+    {"/api/upgrade", HTTP_POST, nullptr, nullptr},
 };
 
 WebServer::WebServer(IConfig &config) : 
