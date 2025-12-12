@@ -1,20 +1,22 @@
 # HA-Climate2MQTT
-A lightweight solution for integrating any climate control system with **Home Assistant** via **MQTT** and an **ESP32**
+A lightweight solution for integrating any climate control system with **Home Assistant** via **MQTT** and an **ESP32** for less than 10$ by heatpump
 
 ## ❄️ Supported Climates
-- [X] Mitsubishi (UART)
-- [X] Toshiba (UART) - (Seiya, Shorai, Yukai, ...)
-- [X] Midea (IR protocol)
-- [ ] Daikin
-
+- [X] Any Headpump with IR (Midea, etc...) [Generic_NEC_IR](doc/Hardware_Generic_NEC_IR.md)
+- [X] Mitsubishi (UART) [Mitsubishi](doc/Hardware_Mitsubishi.md)
+- [X] Toshiba (UART) - (Seiya, Shorai, Yukai, ...) [Toshiba](doc/Hardware_Toshiba.md)
+- [ ] Daikin (UART)
+- [ ] LG (UART)
+- [ ] Fujitsu (UART)
+- [ ] Hitachi (UART)
 
 ## ⚙️ Supported Features
 - [x] HA Auto discovery
 - [X] Set temperature, mode, power, swing
+- [X] Fully configurable from WebInterface
+- [X] Access point to setup it
+- [X] Firmware upgrade
 - [ ] AC can be remotly control via WebInterface
-- [ ] Fully configurable from WebInterface
-- [ ] Access point to setup it
-- [ ] Firmware upgrade
 
 
 ## 🧪 Tested Hardware
@@ -23,7 +25,7 @@ A lightweight solution for integrating any climate control system with **Home As
 ## 🚀 How to Flash & Run
 1. Download the firmware for your microcontroller (In release section)
 2. Wire your AC unit.
-Refer to the documentation in the [doc/](https://github.com/o0Zz/ha-climate2mqtt/tree/main/doc) folder for wiring details.
+Refer to the documentation in the [doc/](doc) folder for wiring details.
 3. Flash your ESP32 via ESP flasher
 https://www.espressif.com/en/support/download/other-tools  
 or 
@@ -79,3 +81,10 @@ In VS Code, set **Command Prompt** as the default terminal:
 1. Press **Ctrl + Shift + P**
 2. Select **Tasks: Run Task**
 3. Choose **Build & Run (ESP-IDF)**
+
+## Disclaimer
+
+This project involves interacting with existing appliance electronics.  
+Proceed at your own risk.
+
+The author is **not responsible** for any Hardware damage of any kind.

@@ -48,6 +48,9 @@ This layout significantly improves Wi‑Fi range and stability.
 
 ![ESP32 Schematic](img/esp32_schema.png)
 
+A jumper is provided to completely disconnect power from the ESP32.
+This allows safe reflashing or debugging without injecting 5V signals into the heat pump during development.
+
 ## Board Pictures
 
 ### Top View
