@@ -21,6 +21,7 @@ The CN105 connector exposes a **UART interface** with the following characterist
 ### Physical Connector
 
 ![Mitsubishi CN105 Connector](img/CN105.png)
+JST connector male 2.00mm (Red)
 
 ### Pinout
 
@@ -40,6 +41,8 @@ Make sure to double-check the pin numbering orientation before wiring.
 
 ![CN105 Wiring Adapter](img/CN105_wiring.png)
 
+
+![CN105 Plugged](img/CN105_plug.jpg)
 
 ## Connecting to an ESP32
 
