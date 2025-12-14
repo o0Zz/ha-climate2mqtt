@@ -26,7 +26,7 @@ Most heat pumps operate with **5V logic levels**, including GPIO signals.
 The ESP32 uses **3.3V logic**.  
 Connecting ESP32 pins directly to a 5V system will **very likely damage the ESP32**.
 
-✔ A **logic level shifter is mandatory**  
+✔ A **logic level shifter is mandatory** (As shown in the below schematic)
 ✔ Use a **bi-directional level shifter module** to safely interface signals  
 ✔ Compact “all‑in‑one” modules are inexpensive and easy to integrate
 
@@ -48,7 +48,7 @@ This layout significantly improves Wi‑Fi range and stability.
 
 ![ESP32 Schematic](img/esp32_schema.png)
 
-A jumper is provided to completely disconnect power from the ESP32.
+A jumper has been added to completely disconnect power from the ESP32.
 This allows safe reflashing or debugging without injecting 5V signals into the heat pump during development.
 
 ## Board Pictures
@@ -63,8 +63,10 @@ This allows safe reflashing or debugging without injecting 5V signals into the h
 
 Basic electronics tools are sufficient:
 
-- Soldering iron + solder wire
-- Pliers / tweezers
+- Soldering iron 
+- Solder wire
+- Wire stripper
+- Wire
 
 ## Bill of Materials (BOM)
 
