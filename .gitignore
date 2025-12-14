@@ -1,3 +1,5 @@
 sdkconfig
 /build
 /managed_components
+version.h
+partitions.csv

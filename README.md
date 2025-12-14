@@ -57,6 +57,7 @@ git clone https://github.com/o0zz/ha-climate2mqtt.git --recursive
 cd ha-climate2mqtt
 idf.py set-target {esp32|esp32s2|esp32s3|esp32c2|esp32c3|esp32c6}
 idf.py menuconfig
+idf.py fullclean
 idf.py build
 idf.py flash
 ```

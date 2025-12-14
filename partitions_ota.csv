@@ -1,6 +1,8 @@
 # Name,   Type, SubType, Offset,  Size, Flags
+# Partition table WITH OTA support
 # Note: if you have increased the bootloader size, make sure to update the offsets to avoid overlap
-
+#
+# Memory Layout (4MB Flash):
 #0x00000 → 0x08000 : Bootloader (32KB)
 #0x08000 → 0x09000 : Partition Table (4KB)
 #0x09000 → 0x0F000 : NVS (24KB)

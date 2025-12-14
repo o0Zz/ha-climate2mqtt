@@ -1,0 +1,13 @@
+menu "HA Climate2MQTT Configuration"
+
+    config ENABLE_OTA
+        bool "Enable OTA (Over-The-Air) updates"
+        default y
+        select PARTITION_TABLE_CUSTOM
+        help
+            Enable OTA update support. When enabled, the firmware uses a dual
+            partition scheme (OTA_0 and OTA_1) allowing firmware updates without
+            physical access to the device. (Require chipset with 4MB Flash minimum)
+
+            Disable this option only if you have limited flash memory (<4MB)
+endmenu
