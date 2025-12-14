@@ -23,12 +23,15 @@
 #include "wifi/WiFiClient.h"
 #include "wifi/WiFiAccessPoint.h"
 
+#include "version.h"
+
 static const char *TAG = "MAIN";
 
 #define AP_TIMEOUT_MS 60000	
 
 extern "C" void app_main(void)
 {
+	ESP_LOGI(TAG, "Starting Climate2MQTT application "APP_VERSION"...");
 	iohub_platform_init();
 
 	EspNVSConfig config;
@@ -47,7 +50,7 @@ extern "C" void app_main(void)
         ESP_LOGE(TAG, "esp_event_loop_create_default failed: %s", esp_err_to_name(err));
     }	
     
-	WebServer webServer(config);
+	WebServer webServer(config, APP_VERSION);
 	webServer.start(80);  // Start on port 80
 
 	WiFiClient wifiClient;
@@ -87,17 +90,17 @@ extern "C" void app_main(void)
 
 	
 	std::shared_ptr<IClimate> climate = nullptr;
-	if (config.getInt32("climate_type", 1) == 1)
+	if (config.getInt32("climate_type", (int32_t)ClimateType::UNKNOWN) == (int32_t)ClimateType::MITSUBISHI)
 	{
 		ESP_LOGI(TAG, "Using Mitsubishi Climate interface");
 		climate = std::make_shared<MitsubishiClimate>(config.getInt32(CONF_CLIMATE_TX_PIN), config.getInt32(CONF_CLIMATE_RX_PIN));
 	}
-	else if (config.getInt32("climate_type", 1) == 2)
+	else if (config.getInt32("climate_type", (int32_t)ClimateType::UNKNOWN) == (int32_t)ClimateType::TOSHIBA)
 	{
 		ESP_LOGI(TAG, "Using Toshiba Climate interface");
 		climate = std::make_shared<ToshibaClimate>(config.getInt32(CONF_CLIMATE_TX_PIN), config.getInt32(CONF_CLIMATE_RX_PIN));
 	}
-	else if (config.getInt32("climate_type", 1) == 3)
+	else if (config.getInt32("climate_type", (int32_t)ClimateType::UNKNOWN) == (int32_t)ClimateType::MIDEA)
 	{
 		ESP_LOGI(TAG, "Using Midea Climate interface");
 		climate = std::make_shared<MideaClimate>(config.getInt32(CONF_CLIMATE_TX_PIN), config.getInt32(CONF_CLIMATE_RX_PIN));
@@ -110,8 +113,8 @@ extern "C" void app_main(void)
 
 	if (!climate->setup())
 	{
-		ESP_LOGE(TAG, "Failed to setup Mitsubishi Climate interface !");
-		return;
+		ESP_LOGE(TAG, "Failed to setup climate ...");
+		//TODO: return error to webinterface ?
 	}
 
 	std::string unique_id = config.getString(CONF_MQTT_UNIQUE_ID, "ac_unit_1");
@@ -121,10 +124,10 @@ extern "C" void app_main(void)
     climateMqtt->start();
 
 	while (true) {
-		vTaskDelay(pdMS_TO_TICKS(config.getInt32(CONF_CLIMATE_POLLING_MS, 1000)));
-
 		//ESP_LOGD(TAG, "Refreshing state...");
 		climateMqtt->refresh();
+
+		vTaskDelay(pdMS_TO_TICKS(config.getInt32(CONF_CLIMATE_POLLING_MS, 1000)));
 	}
 
 	// Never reached

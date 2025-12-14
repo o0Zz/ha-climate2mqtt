@@ -7,7 +7,7 @@
 class WebServer
 {
 public:
-    WebServer(IConfig &config);
+    WebServer(IConfig &config, const std::string &appversion = "unknown");
     ~WebServer();
 
     bool start(uint16_t port = 80);
@@ -20,4 +20,5 @@ private:
 
     IConfig &config;
     httpd_handle_t server;
+    std::string appversion;
 };

@@ -46,9 +46,10 @@ const RouteDef routes[] = {
     {"/upgrade",        HTTP_POST, nullptr, nullptr},
 };
 
-WebServer::WebServer(IConfig &config) : 
+WebServer::WebServer(IConfig &config, const std::string &appversion) : 
     config(config), 
-    server(nullptr)
+    server(nullptr),
+    appversion(appversion)
 {
 }
 
@@ -84,6 +85,7 @@ esp_err_t WebServer::serve(httpd_req_t *req, const char *title, const std::strin
         }
     }
 
+    vars["app_version"] = appversion;
     vars["title"] = title;
 
     std::string htmlStr = JinjaLikeTemplate::render(std::string(WEB_COMMON_HEAD) + pageContent + WEB_COMMON_FOOT, vars);

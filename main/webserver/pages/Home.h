@@ -3,7 +3,7 @@
 static const char* WEB_HOME_TITLE = "Climate2MQTT Settings";
 static const char* WEB_HOME_BODY =
 "    <h1>Climate2MQTT Settings</h1>\n"
-"    <p>ESP-IDF based climate control system</p>\n"
+"    <p>ESP-IDF based climate control system v{{app_version}}</p>\n"
 "    <div class=\"actions actions-center\">\n"
 
 "      <button type=\"button\" onclick=\"window.location='/wifi'\"><span class=\"icon\">\n"
@@ -45,4 +45,7 @@ static const char* WEB_HOME_BODY =
 "    </div>\n"
 "    <div class=\"config-item\">\n"
 "      <span class=\"config-label\">MQTT Broker:</span><span class=\"config-value\">{{mqtt_broker_uri}}</span>\n"
+"    </div>\n"
+"    <div class=\"config-item\">\n"
+"      <span class=\"config-label\">Unique ID:</span><span class=\"config-value\">{{mqtt_unique_id}}</span>\n"
 "    </div>\n";
