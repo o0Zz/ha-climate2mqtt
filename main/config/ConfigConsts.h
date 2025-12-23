@@ -56,12 +56,7 @@ static const char *ClimateTypeStr[] = {
 #define CONF_MQTT_USER          "mqtt_user"
 #define CONF_MQTT_PASSWORD      "mqtt_password"
 
-struct ConfigDefaultEntry {
-    const char* key;
-    const char* defaultValue;
-};
-
-static const ConfigDefaultEntry ConfigList[] = {
+static const std::map<std::string, const char*> ConfigList = {
     {CONF_WIFI_SSID, nullptr},
     {CONF_WIFI_PASSWORD, nullptr},
     {CONF_WIFI_SECURITY, "3"}, // Default to WPA2_PSK
@@ -73,8 +68,7 @@ static const ConfigDefaultEntry ConfigList[] = {
     {CONF_MQTT_UNIQUE_ID, "climate_unit_1"},
     {CONF_MQTT_BROKER_URI, "mqtt://"},
     {CONF_MQTT_USER, nullptr},
-    {CONF_MQTT_PASSWORD, nullptr},
-    {nullptr, nullptr}
+    {CONF_MQTT_PASSWORD, nullptr}
 };
 
 static const std::map<std::string, const char* const*> ConfigValueList = {

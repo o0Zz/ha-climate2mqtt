@@ -24,7 +24,7 @@
 #include "wifi/WiFiAccessPoint.h"
 
 #include "systeminfo/ESP32SystemInfo.h"
-#include "led/StatusLed.h"
+#include "led/Led.h"
 #include "version.h"
 
 static const char *TAG = "MAIN";
@@ -32,21 +32,55 @@ static const char *TAG = "MAIN";
 #define AP_TIMEOUT_MS 60000
 #define STATUS_LED_GPIO 8  // ESP32-C6 onboard RGB LED
 
+enum class LedStatus {
+    OFF,            // LED off
+    CONNECTING,     // Blue - connecting to WiFi/MQTT/Climate
+    OK,             // Green - everything working
+    ERROR,          // Red - connection error
+    WAITING_SETUP   // Blinking red - waiting for user setup
+};
+
+void status_led_set(led::Led& led, LedStatus status)
+{
+    constexpr uint64_t BLINK_PERIOD_US = 500000;
+
+    switch (status) {
+        case LedStatus::OFF:
+            led.off();
+            break;
+        case LedStatus::CONNECTING:
+            led.setColor(0, 0, 255);
+            led.on();
+            break;
+        case LedStatus::OK:
+            led.setColor(0, 255, 0);
+            led.on();
+            break;
+        case LedStatus::ERROR:
+            led.setColor(255, 0, 0);
+            led.on();
+            break;
+        case LedStatus::WAITING_SETUP:
+            led.setColor(0, 0, 255);
+            led.on(BLINK_PERIOD_US);
+            break;
+    }
+}
+
 extern "C" void app_main(void)
 {
 	ESP_LOGI(TAG, "Starting Climate2MQTT application %s...", APP_VERSION);
 	iohub_platform_init();
 
-	// Initialize status LED
-	if (!status_led_init(STATUS_LED_GPIO)) {
-		ESP_LOGW(TAG, "Failed to initialize status LED");
-	}
-	status_led_set(LedStatus::CONNECTING);  // Blue - starting up
+	led::Led statusLed(STATUS_LED_GPIO);
+	statusLed.setBrightness(10);
+
+	status_led_set(statusLed, LedStatus::CONNECTING);  // Blue - starting up
 
 	EspNVSConfig config;
 	if (!config.load()) {
 		ESP_LOGE(TAG, "Failed to load configuration from NVS");
-		status_led_set(LedStatus::ERROR);  // Red - config error
+		status_led_set(statusLed, LedStatus::ERROR);  // Red - config error
 		return;
 	}
 
@@ -66,16 +100,16 @@ extern "C" void app_main(void)
 
 	WiFiClient wifiClient;
 
-	status_led_set(LedStatus::CONNECTING);  // Blue - connecting to WiFi
+	status_led_set(statusLed, LedStatus::CONNECTING);  // Blue - connecting to WiFi
 	if (!wifiClient.setup(config.getString(CONF_WIFI_SSID), config.getString(CONF_WIFI_PASSWORD), config.getString(CONF_WIFI_HOSTNAME))) {
 		ESP_LOGE(TAG, "Failed to setup WiFi client");
-		status_led_set(LedStatus::ERROR);  // Red - WiFi setup error
+		status_led_set(statusLed, LedStatus::ERROR);  // Red - WiFi setup error
 		return;
 	}
 
 	if (!wifiClient.connect()) {
 		ESP_LOGE(TAG, "Failed to connect to WiFi, creating access point for 1 min then reboot...");
-		status_led_set(LedStatus::ERROR);  // Red - WiFi connection failed
+		status_led_set(statusLed, LedStatus::ERROR);  // Red - WiFi connection failed
 		
 		WiFiAccessPoint wifiAP;
 		if (!wifiAP.setup("Climate2MQTT_Setup", "", config.getString(CONF_WIFI_HOSTNAME))) {
@@ -87,6 +121,8 @@ extern "C" void app_main(void)
 			ESP_LOGE(TAG, "Failed to create WiFi access point");
 			return;
 		}
+
+		status_led_set(statusLed, LedStatus::WAITING_SETUP);  // Blinking red - awaiting user configuration
 
 		u32 timeout_start = IOHUB_TIMER_START();
 		while (IOHUB_TIMER_ELAPSED(timeout_start) < AP_TIMEOUT_MS)
@@ -128,7 +164,7 @@ extern "C" void app_main(void)
 	if (!climate->setup())
 	{
 		ESP_LOGE(TAG, "Failed to setup climate ...");
-		status_led_set(LedStatus::ERROR);  // Red - climate setup error
+		status_led_set(statusLed, LedStatus::ERROR);  // Red - climate setup error
 		//TODO: return error to webinterface ?
 	}
 
@@ -138,7 +174,7 @@ extern "C" void app_main(void)
 	HAMqttClimateImpl *climateMqtt = new HAMqttClimateImpl(climate, config.getString(CONF_MQTT_BROKER_URI), config.getString(CONF_MQTT_USER), config.getString(CONF_MQTT_PASSWORD), std::string("climate2mqtt/") + unique_id, unique_id);
     climateMqtt->start();
 
-	status_led_set(LedStatus::CONNECTING);  // Blue - connecting to MQTT
+	status_led_set(statusLed, LedStatus::CONNECTING);  // Blue - connecting to MQTT
 
 	while (true) {
 		//ESP_LOGD(TAG, "Refreshing state...");
@@ -146,11 +182,11 @@ extern "C" void app_main(void)
 
 		// Update LED status based on connection states
 		if (!wifiClient.isConnected()) {
-			status_led_set(LedStatus::ERROR);  // Red - WiFi disconnected
+			status_led_set(statusLed, LedStatus::ERROR);  // Red - WiFi disconnected
 		} else if (!climateMqtt->isConnected()) {
-			status_led_set(LedStatus::CONNECTING);  // Blue - MQTT connecting/reconnecting
+			status_led_set(statusLed, LedStatus::CONNECTING);  // Blue - MQTT connecting/reconnecting
 		} else {
-			status_led_set(LedStatus::OK);  // Green - all systems operational
+			status_led_set(statusLed, LedStatus::OK);  // Green - all systems operational
 		}
 
 		vTaskDelay(pdMS_TO_TICKS(config.getInt32(CONF_CLIMATE_POLLING_MS, 1000)));

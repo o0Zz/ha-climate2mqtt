@@ -182,7 +182,6 @@ esp_err_t WebServer::request_handler(httpd_req_t *req)
             //Save posted settings
             auto form = UrlUtils::parse_urlencoded_form(req);
             webServer->config.set(form);
-            
         }
         else if (std::string(req->uri) == "/reboot") 
         {
@@ -199,6 +198,9 @@ esp_err_t WebServer::request_handler(httpd_req_t *req)
                 httpd_resp_send_err(req, HTTPD_500_INTERNAL_SERVER_ERROR, "Failed to clear configuration");
                 return ESP_FAIL;
             }
+
+            vTaskDelay(pdMS_TO_TICKS(2000));
+            esp_restart();
         }
     }
 
