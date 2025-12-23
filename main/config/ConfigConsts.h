@@ -1,6 +1,7 @@
 #pragma once
 
 #include <map>
+#include <string>
 
 // All configuration key must be max 15 characters long
 
@@ -8,6 +9,7 @@
 #define CONF_WIFI_SSID "wifi_ssid"
 #define CONF_WIFI_PASSWORD "wifi_password"
 #define CONF_WIFI_SECURITY "wifi_security"
+#define CONF_WIFI_HOSTNAME "wifi_hostname"
 
 enum class WiFiSecurityType {
     OPEN = 0,
@@ -25,7 +27,7 @@ static const char* WiFiSecurityTypeStr[] = {
     "WPA2-PSK",
     "WPA/WPA2-PSK",
     "WPA3-PSK",
-    NULL
+    nullptr
 };
 
 /* Climate */
@@ -46,7 +48,7 @@ static const char *ClimateTypeStr[] = {
     "Mitsubishi",
     "Toshiba",
     "Midea",
-    NULL
+    nullptr
 };
 
 #define CONF_MQTT_UNIQUE_ID     "mqtt_unique_id"
@@ -54,22 +56,28 @@ static const char *ClimateTypeStr[] = {
 #define CONF_MQTT_USER          "mqtt_user"
 #define CONF_MQTT_PASSWORD      "mqtt_password"
 
-static const char* ConfigList[] = {
-    CONF_WIFI_SSID,
-    CONF_WIFI_PASSWORD,
-    CONF_WIFI_SECURITY,
-    CONF_CLIMATE_TYPE,
-    CONF_CLIMATE_POLLING_MS,
-    CONF_CLIMATE_TX_PIN,
-    CONF_CLIMATE_RX_PIN,
-    CONF_MQTT_UNIQUE_ID,
-    CONF_MQTT_BROKER_URI,
-    CONF_MQTT_USER,
-    CONF_MQTT_PASSWORD,
-    NULL
+struct ConfigDefaultEntry {
+    const char* key;
+    const char* defaultValue;
+};
+
+static const ConfigDefaultEntry ConfigList[] = {
+    {CONF_WIFI_SSID, nullptr},
+    {CONF_WIFI_PASSWORD, nullptr},
+    {CONF_WIFI_SECURITY, "3"}, // Default to WPA2_PSK
+    {CONF_WIFI_HOSTNAME, "climate2mqtt"},
+    {CONF_CLIMATE_TYPE, "0"}, // Default to UNKNOWN
+    {CONF_CLIMATE_POLLING_MS, "5000"},
+    {CONF_CLIMATE_TX_PIN, "0"},
+    {CONF_CLIMATE_RX_PIN, "1"},
+    {CONF_MQTT_UNIQUE_ID, "climate_unit_1"},
+    {CONF_MQTT_BROKER_URI, "mqtt://"},
+    {CONF_MQTT_USER, nullptr},
+    {CONF_MQTT_PASSWORD, nullptr},
+    {nullptr, nullptr}
 };
 
 static const std::map<std::string, const char* const*> ConfigValueList = {
-    {"climate_type_list", ClimateTypeStr},
-    {"wifi_security_list", WiFiSecurityTypeStr}
+    {CONF_CLIMATE_TYPE, ClimateTypeStr},
+    {CONF_WIFI_SECURITY, WiFiSecurityTypeStr}
 };

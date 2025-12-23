@@ -8,6 +8,8 @@ static const char* WEB_WIFI_BODY =
 "      <input id=\"wifi_ssid\" name=\"wifi_ssid\" type=\"text\" value=\"{{wifi_ssid}}\">\n"
 "      <label for=\"wifi_password\">Password</label>\n"
 "      <input id=\"wifi_password\" name=\"wifi_password\" type=\"password\" value=\"{{wifi_password}}\">\n"
+"      <label for=\"wifi_hostname\">Hostname</label>\n"
+"      <input id=\"wifi_hostname\" name=\"wifi_hostname\" type=\"text\" value=\"{{wifi_hostname}}\">\n"
 "      <label for=\"wifi_security\">Security</label>\n"
 "      <select id=\"wifi_security\" name=\"wifi_security\"></select>\n"
 "      <div class=\"actions\">\n"

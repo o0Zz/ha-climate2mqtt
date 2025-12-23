@@ -1,13 +1,15 @@
 #pragma once
 
 #include <string>
+#include <memory>
 #include "esp_http_server.h"
-#include "../config/IConfig.h"
+#include "config/IConfig.h"
+#include "systeminfo/ISystemInfo.h"
 
 class WebServer
 {
 public:
-    WebServer(IConfig &config, const std::string &appversion = "unknown");
+    WebServer(IConfig &config, std::unique_ptr<systeminfo::ISystemInfo> &&systemInfo);
     ~WebServer();
 
     bool start(uint16_t port = 80);
@@ -20,5 +22,5 @@ private:
 
     IConfig &config;
     httpd_handle_t server;
-    std::string appversion;
+    std::unique_ptr<systeminfo::ISystemInfo> systemInfo;
 };

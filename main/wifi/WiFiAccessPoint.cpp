@@ -4,6 +4,7 @@
 #include "esp_wifi.h"
 #include "esp_event.h"
 #include "esp_mac.h"
+#include "esp_netif.h"
 
 #define TAG "WiFiAccessPoint"
 
@@ -37,15 +38,29 @@ WiFiAccessPoint::~WiFiAccessPoint()
 {
 }
 
-bool WiFiAccessPoint::setup(const std::string &ssid, const std::string &password)
+bool WiFiAccessPoint::setup(const std::string &ssid, const std::string &password, const std::string &hostname)
 {
-    esp_netif_create_default_wifi_ap();
+    esp_netif_t *netif = esp_netif_create_default_wifi_ap();
+
+    if (netif == nullptr) {
+        ESP_LOGE(TAG, "Failed to create default WiFi AP interface");
+        return false;
+    }
 
 	wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
 	esp_err_t err = esp_wifi_init(&cfg);
     if (err != ESP_OK) {
         ESP_LOGE(TAG, "esp_wifi_init failed: %s", esp_err_to_name(err));
         return false;
+    }
+
+    if (!hostname.empty()) {
+        err = esp_netif_set_hostname(netif, hostname.c_str());
+        if (err != ESP_OK) {
+            ESP_LOGW(TAG, "esp_netif_set_hostname failed: %s", esp_err_to_name(err));
+        } else {
+            ESP_LOGI(TAG, "WiFi AP hostname set to %s", hostname.c_str());
+        }
     }
 
 	esp_event_handler_instance_t instance_any_id;

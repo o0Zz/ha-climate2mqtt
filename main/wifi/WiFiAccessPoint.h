@@ -12,7 +12,7 @@ public:
     WiFiAccessPoint();
     ~WiFiAccessPoint();
 
-    bool setup(const std::string &ssid, const std::string &password);
+    bool setup(const std::string &ssid, const std::string &password, const std::string &hostname = "");
 
     bool create();
     void destroy();

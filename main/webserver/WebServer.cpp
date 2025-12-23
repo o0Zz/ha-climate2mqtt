@@ -11,8 +11,6 @@
 #include "webserver/JinjaLikeTemplate.h"
 #include "webserver/UrlUtils.h"
 
-#include "config/ConfigConsts.h"
-
 #include "pages/HeaderFooter.h"
 #include "pages/Home.h"
 #include "pages/WiFi.h"
@@ -46,10 +44,10 @@ const RouteDef routes[] = {
     {"/upgrade",        HTTP_POST, nullptr, nullptr},
 };
 
-WebServer::WebServer(IConfig &config, const std::string &appversion) : 
+WebServer::WebServer(IConfig &config, std::unique_ptr<systeminfo::ISystemInfo> &&systemInfo) : 
     config(config), 
     server(nullptr),
-    appversion(appversion)
+    systemInfo(std::move(systemInfo))
 {
 }
 
@@ -60,16 +58,9 @@ WebServer::~WebServer()
 
 esp_err_t WebServer::serve(httpd_req_t *req, const char *title, const std::string &pageContent)
 {
-    JinjaLikeTemplate::VarMap vars;
+    JinjaLikeTemplate::VarMap vars = config.getAll();
 
-    for (const char* key : ConfigList) 
-    {
-        if (key == nullptr)
-            break;
-        vars[key] = config.getString(key, "");
-    }
-    
-    for (const auto& kv : ConfigValueList) 
+    for (const auto& kv : config.getConfigValueList()) 
     {
         const char* const* list = kv.second;
         if (list != nullptr) 
@@ -81,11 +72,23 @@ esp_err_t WebServer::serve(httpd_req_t *req, const char *title, const std::strin
                 if (list[i + 1] != nullptr)
                     options += ",";
             }
-            vars[kv.first] = options;
+            vars[kv.first + "_list"] = options;
         }
     }
-
-    vars["app_version"] = appversion;
+    
+    vars["app_version"] = systemInfo->getVersion();
+    vars["mac_address"] = systemInfo->getMacAddress();
+    vars["ip_address"] = systemInfo->getIPAddress();
+    vars["hostname"] = systemInfo->getHostname();
+    vars["uptime_seconds"] = std::to_string(systemInfo->getUptimeSeconds());
+    vars["free_heap_bytes"] =  std::to_string(systemInfo->getFreeHeapBytes());
+    vars["total_heap_bytes"] = std::to_string(systemInfo->getTotalHeapBytes());
+    vars["chip_model"] = systemInfo->getChipModel();
+    vars["cpu_frequency_mhz"] = std::to_string(systemInfo->getCpuFrequencyMHz());
+    vars["cpu_core_count"] = std::to_string(systemInfo->getCpuCoreCount());
+    vars["chip_revision"] = systemInfo->getChipRevision();
+    vars["flash_size_bytes"] = std::to_string(systemInfo->getFlashSizeBytes());
+    
     vars["title"] = title;
 
     std::string htmlStr = JinjaLikeTemplate::render(std::string(WEB_COMMON_HEAD) + pageContent + WEB_COMMON_FOOT, vars);
@@ -178,19 +181,8 @@ esp_err_t WebServer::request_handler(httpd_req_t *req)
         {
             //Save posted settings
             auto form = UrlUtils::parse_urlencoded_form(req);
-            for (const auto& kv : form) 
-            {
-                for (const char* key : ConfigList) 
-                {
-                    if (key == nullptr)
-                        break;
-
-                    if (kv.first == key) {
-                        ESP_LOGI(TAG, "Saving config key: %s value: %s", kv.first.c_str(), kv.second.c_str());
-                        webServer->config.setString(kv.first.c_str(), kv.second.c_str());
-                    }
-                }
-            }
+            webServer->config.set(form);
+            
         }
         else if (std::string(req->uri) == "/reboot") 
         {

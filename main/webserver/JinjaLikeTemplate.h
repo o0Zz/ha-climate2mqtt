@@ -1,11 +1,11 @@
 
 #pragma once
 #include <string>
-#include <unordered_map>
+#include <map>
 
 class JinjaLikeTemplate {
 public:
-    using VarMap = std::unordered_map<std::string, std::string>;
+    using VarMap = std::map<std::string, std::string>;
 
     // Render a template string replacing {{key}} with provided values
     static std::string render(const std::string &tmpl, const VarMap &vars) {

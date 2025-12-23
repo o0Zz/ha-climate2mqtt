@@ -3,7 +3,7 @@
 static const char* WEB_HOME_TITLE = "Climate2MQTT Settings";
 static const char* WEB_HOME_BODY =
 "    <h1>Climate2MQTT Settings</h1>\n"
-"    <p>ESP-IDF based climate control system v{{app_version}}</p>\n"
+"    <p>ESP-IDF based climate control system v{{app_version}} ({{hostname}} {{mac_address}})</p>\n"
 "    <div class=\"actions actions-center\">\n"
 
 "      <button type=\"button\" onclick=\"window.location='/wifi'\"><span class=\"icon\">\n"

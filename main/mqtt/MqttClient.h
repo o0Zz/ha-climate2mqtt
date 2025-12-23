@@ -26,6 +26,9 @@ public:
     // Publish a message to a topic
     bool publish(const std::string& topic, const std::string &payload, int qos = 0, int retain = false);
 
+    // Check if connected to MQTT broker
+    bool isConnected() const { return m_connected; }
+
 protected:
     // Virtual method to be called when connected (for derived classes to subscribe to their topics)
     virtual void on_connected() {}

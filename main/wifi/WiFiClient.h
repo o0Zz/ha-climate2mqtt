@@ -12,7 +12,7 @@ public:
     WiFiClient();
     ~WiFiClient();
 
-    bool setup(const std::string &ssid, const std::string &password, int max_retries = 5);
+    bool setup(const std::string &ssid, const std::string &password, const std::string &hostname = "", int max_retries = 5);
 
     bool connect();
     void disconnect();

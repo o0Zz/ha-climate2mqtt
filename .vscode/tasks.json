@@ -19,6 +19,23 @@
             "problemMatcher": []
         },
         {
+            "label": "Monitor (ESP-IDF)",
+            "type": "shell",
+            "promptOnClose": true,
+            "command": "powershell",
+            "args": [
+                "-NoProfile",
+                "-ExecutionPolicy", "Bypass",
+                "-Command",
+                "$idfVersion = (Get-Content (Join-Path $env:IDF_TOOLS_PATH 'esp_idf.json') -Raw | ConvertFrom-Json).idfSelectedId; cmd /c \"cmd /c \\\"%IDF_TOOLS_PATH%\\idf_cmd_init.bat $($idfVersion) && idf.py monitor\\\"\""
+            ],
+            "presentation": {
+                "reveal": "always",
+                "panel": "shared"
+            },
+            "problemMatcher": []
+        },
+        {
             "label": "Clean (ESP-IDF)",
             "type": "shell",
             "promptOnClose": true,
@@ -28,6 +45,23 @@
                 "-ExecutionPolicy", "Bypass",
                 "-Command",
                 "$idfVersion = (Get-Content (Join-Path $env:IDF_TOOLS_PATH 'esp_idf.json') -Raw | ConvertFrom-Json).idfSelectedId; cmd /c \"cmd /c \\\"%IDF_TOOLS_PATH%\\idf_cmd_init.bat $($idfVersion) && idf.py fullclean\\\"\""
+            ],
+            "presentation": {
+                "reveal": "always",
+                "panel": "shared"
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "Menu config (ESP-IDF)",
+            "type": "shell",
+            "promptOnClose": true,
+            "command": "powershell",
+            "args": [
+                "-NoProfile",
+                "-ExecutionPolicy", "Bypass",
+                "-Command",
+                "$idfVersion = (Get-Content (Join-Path $env:IDF_TOOLS_PATH 'esp_idf.json') -Raw | ConvertFrom-Json).idfSelectedId; cmd /c \"cmd /c \\\"%IDF_TOOLS_PATH%\\idf_cmd_init.bat $($idfVersion) && idf.py menuconfig\\\"\""
             ],
             "presentation": {
                 "reveal": "always",
