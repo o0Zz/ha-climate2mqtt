@@ -3,11 +3,11 @@
 #include "climate/IoHubClimate.h"
 #include "heatpump/iohub_heatpump_midea.h"
 
-class MideaClimate : public IoHubClimate
+class IRMideaClimate : public IoHubClimate
 {
 public:
-    MideaClimate(u8 txPin, u8 rxPin);
-    ~MideaClimate() override;
+    IRMideaClimate(u8 txPin, u8 rxPin);
+    ~IRMideaClimate() override;
 
     bool setup() override;
     bool refresh() override;

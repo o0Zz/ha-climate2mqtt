@@ -14,7 +14,7 @@
 
 #include "climate/MitsubishiClimate.h"
 #include "climate/ToshibaClimate.h"
-#include "climate/MideaClimate.h"
+#include "climate/IRMideaClimate.h"
 #include "climate/EmptyClimate.h"
 
 #include "config/EspNVSConfig.h"
@@ -150,10 +150,10 @@ extern "C" void app_main(void)
 		ESP_LOGI(TAG, "Using Toshiba Climate interface");
 		climate = std::make_shared<ToshibaClimate>(config.getInt32(CONF_CLIMATE_TX_PIN), config.getInt32(CONF_CLIMATE_RX_PIN));
 	}
-	else if (config.getInt32("climate_type", (int32_t)ClimateType::UNKNOWN) == (int32_t)ClimateType::MIDEA)
+	else if (config.getInt32("climate_type", (int32_t)ClimateType::UNKNOWN) == (int32_t)ClimateType::IR_MIDEA)
 	{
 		ESP_LOGI(TAG, "Using Midea Climate interface");
-		climate = std::make_shared<MideaClimate>(config.getInt32(CONF_CLIMATE_TX_PIN), config.getInt32(CONF_CLIMATE_RX_PIN));
+		climate = std::make_shared<IRMideaClimate>(config.getInt32(CONF_CLIMATE_TX_PIN), config.getInt32(CONF_CLIMATE_RX_PIN));
 	}
 	else
 	{

@@ -41,7 +41,7 @@ By default, it will create a Wi-Fi access point named `ESP32_Climate2MQTT`.
 ## LED Status Indicators
 
 The ESP32 (Especially C6) has a builtin RGB led.
-This LED is used in order to quickly know the current ESP32 status without the need to connect to the interface
+This LED is used to know the current ESP32 status.
 
 - **Solid Blue:** Device is booting or connecting to network
 - **Solid Red:** Error state, or disconnected from WiFi, MQTT, or climate system

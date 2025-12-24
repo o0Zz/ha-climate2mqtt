@@ -2,6 +2,7 @@
 
 This documentation describes how to build a **generic, replaceable, and maintainable ESP32-based control board** for air conditioners and heat pumps. 
 The goal is to provide a reusable hardware platform that can be adapted to different heat pump models while remaining easy to maintain and upgrade.
+All the integration with all climate rely on this initial hardware then each climate have its own additional BOM
 
 ## Hardware Considerations
 

@@ -33,6 +33,7 @@ Make sure to double-check the pin numbering orientation before wiring.
 
 | Component | Description | Link |
 |---------|-------------|------|
+| ESP32 board | | ![Hardware_ESP32.md](Hardware_ESP32.md) |
 | JST 2.00 mm Female Connector | Mating connector for CN105 | https://fr.aliexpress.com/item/1005009087160808.html |
 
 ---

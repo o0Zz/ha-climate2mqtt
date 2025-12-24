@@ -1,8 +1,13 @@
-# Generic NEC IR – Heat Pump Connectivity Mod
+# Generic IR Mode
 
 ## Overview
 
 This project explains how to convert a **non-connected heat pump** into a **connected device** by interfacing directly with its **infrared (IR) receiver**.
+
+This procedure differnt from the Hardware_Generic_IR_Blaster.md one become it insert the ESP32 directly on the Air-Conditioner IR sensor.
+
+The main advantage of this solution, it offer the most integrate solution where everything is hidden.
+The main disadvantage is you need to open your air conditioner and solder directly on the IR sensor on the eletronic board, that might remove your warranty.
 
 The core idea is to connect a **microcontroller (ESP32)** to the IR data line so it can:
 
@@ -42,9 +47,9 @@ Please read carefully before building:
 
 | Component | Description | Link |
 |---------|------------|------|
-| ESP32-C6 Mini | Main microcontroller | https://fr.aliexpress.com/item/1005008653649948.html |
-| Level Shifter | Logic level conversion | https://fr.aliexpress.com/item/1005006823347058.html |
-| Schottky Diode (SR540) | GPIO protection | https://fr.aliexpress.com/item/1005010429977536.html |
+| ESP32 board | | ![Hardware_ESP32.md](Hardware_ESP32.md) |
+| Schottky Diode (1N5819) | GPIO protection | https://fr.aliexpress.com/item/1005001552094086.html |
+| 1Kohm Resistor | | https://fr.aliexpress.com/item/1005010228694988.html |
 | 2N2222 | NPN Transistor | https://fr.aliexpress.com/item/1005001728337190.html |
 
 

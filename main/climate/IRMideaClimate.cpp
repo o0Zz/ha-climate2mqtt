@@ -1,21 +1,21 @@
-#include "climate/MideaClimate.h"
+#include "climate/IRMideaClimate.h"
 #include "esp_log.h"
 
 #define TAG "MideaClimate"
 
-MideaClimate::MideaClimate(u8 txPin, u8 rxPin) :
+IRMideaClimate::IRMideaClimate(u8 txPin, u8 rxPin) :
     txPin(txPin),
     rxPin(rxPin)
 {
-    ESP_LOGI(TAG, "MideaClimate::MideaClimate ...");
+    ESP_LOGI(TAG, "IRMideaClimate::IRMideaClimate ...");
 }
 
-MideaClimate::~MideaClimate() 
+IRMideaClimate::~IRMideaClimate() 
 {
     iohub_heatpump_midea_uninit(&heatpumpCtx);
 }
 
-bool MideaClimate::setup()  
+bool IRMideaClimate::setup()  
 {
     ESP_LOGI(TAG, "Setting up Uart ...");
 
@@ -32,7 +32,7 @@ bool MideaClimate::setup()
     return true;
 }
 
-bool MideaClimate::refresh()
+bool IRMideaClimate::refresh()
 {
     u16 receiverId;
     if ( !iohub_digital_async_receiver_has_packet_available(&receiverCtx, &receiverId) )
@@ -66,7 +66,7 @@ bool MideaClimate::refresh()
     return ret;
 }
 
-bool MideaClimate::updateState() 
+bool IRMideaClimate::updateState() 
 {
     IoHubHeatpumpSettings settings;
 
