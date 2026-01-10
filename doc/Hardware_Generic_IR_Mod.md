@@ -32,11 +32,6 @@ Please read carefully before building:
 - **⚠️ Never inject any voltage into the IR data pin**
 - The circuit **only pulls the data pin down to GND**
 - The provided schematic **must not drive the line high**
-- A **Schottky diode** is used as a protection mechanism in case of:
-  - Firmware bugs
-  - GPIO misconfiguration (e.g. pin accidentally set as output)
-
-**Adding the Schottky diode is strongly recommended** for safety.
 
 ## Hardware Schematic
 
@@ -48,7 +43,6 @@ Please read carefully before building:
 | Component | Description | Link |
 |---------|------------|------|
 | ESP32 board | | ![Hardware_ESP32.md](Hardware_ESP32.md) |
-| Schottky Diode (1N5819) | GPIO protection | https://fr.aliexpress.com/item/1005001552094086.html |
 | 1Kohm Resistor | | https://fr.aliexpress.com/item/1005010228694988.html |
 | 2N2222 | NPN Transistor | https://fr.aliexpress.com/item/1005001728337190.html |
 
