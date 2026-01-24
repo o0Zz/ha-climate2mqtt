@@ -5,6 +5,8 @@
 #include "esp_event.h"
 #include "esp_netif.h"
 
+#include <string.h>
+
 #define TAG "WiFiClient"
 
 #define WIFI_CONNECTED_BIT BIT0
@@ -107,9 +109,10 @@ bool WiFiClient::setup(const std::string &ssid, const std::string &password, con
         }
     }
 
+
     memset(&wifi_config, 0, sizeof(wifi_config_t));
-	memcpy(wifi_config.sta.ssid, ssid.c_str(), ssid.length());
-	memcpy(wifi_config.sta.password, password.c_str(), password.length());
+    strlcpy(reinterpret_cast<char*>(wifi_config.sta.ssid), ssid.c_str(), sizeof(wifi_config.sta.ssid));
+    strlcpy(reinterpret_cast<char*>(wifi_config.sta.password), password.c_str(), sizeof(wifi_config.sta.password));
 	wifi_config.sta.threshold.authmode = WIFI_AUTH_WPA2_PSK;
 	wifi_config.sta.pmf_cfg.capable = true;
 	wifi_config.sta.pmf_cfg.required = false;

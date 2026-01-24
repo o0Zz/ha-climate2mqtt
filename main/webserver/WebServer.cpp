@@ -11,6 +11,8 @@
 #include "webserver/JinjaLikeTemplate.h"
 #include "webserver/UrlUtils.h"
 
+#include "logs/LogBuffer.h"
+
 #include "pages/HeaderFooter.h"
 #include "pages/Home.h"
 #include "pages/WiFi.h"
@@ -20,6 +22,7 @@
 #include "pages/Upgrade.h"
 #include "pages/Reboot.h"
 #include "pages/ClearConfig.h"
+#include "pages/Logs.h"
 
 #define TAG "WebServer"
 
@@ -37,6 +40,8 @@ const RouteDef routes[] = {
     {"/wifi",           HTTP_GET,  WEB_WIFI_TITLE, WEB_WIFI_BODY},
     {"/mqtt",           HTTP_GET,  WEB_MQTT_TITLE, WEB_MQTT_BODY},
     {"/climate",        HTTP_GET,  WEB_CLIMATE_TITLE, WEB_CLIMATE_BODY},
+    {"/logs",           HTTP_GET,  WEB_LOGS_TITLE, WEB_LOGS_BODY},
+    {"/logs/raw",       HTTP_GET,  nullptr, nullptr},
     {"/save",           HTTP_POST, WEB_SAVED_TITLE, WEB_SAVED_BODY},
     {"/reboot",         HTTP_POST, WEB_REBOOT_TITLE, WEB_REBOOT_BODY},
     {"/clear_config",   HTTP_POST, WEB_CLEAR_CONFIG_TITLE, WEB_CLEAR_CONFIG_BODY},
@@ -98,12 +103,27 @@ esp_err_t WebServer::serve(httpd_req_t *req, const char *title, const std::strin
     return ESP_OK;
 }
 
+esp_err_t WebServer::serveLogsRaw(httpd_req_t *req)
+{
+    std::string logs = LogBuffer::getSnapshot();
+
+    httpd_resp_set_type(req, "text/plain");
+    httpd_resp_set_hdr(req, "Cache-Control", "no-store");
+    httpd_resp_send(req, logs.c_str(), logs.length());
+    return ESP_OK;
+}
+
 esp_err_t WebServer::request_handler(httpd_req_t *req)
 {
     //Generic get handler that serves all pages
     WebServer* webServer = static_cast<WebServer*>(req->user_ctx);
 
     ESP_LOGI(TAG, "HTTP Method: %d Uri: %s", req->method, req->uri);
+
+    if (req->method == HTTP_GET && std::string(req->uri) == "/logs/raw") {
+        return webServer->serveLogsRaw(req);
+    }
+
     if (req->method == HTTP_POST) {
         if (std::string(req->uri) == "/upgrade") 
         {
@@ -226,6 +246,7 @@ bool WebServer::start(uint16_t port)
     config.ctrl_port = 32768;
     config.max_open_sockets = 7;
     config.lru_purge_enable = true;
+    config.max_uri_handlers = sizeof(routes) / sizeof(routes[0]);
     
     ESP_LOGI(TAG, "Starting HTTP server on port %d", port);
     

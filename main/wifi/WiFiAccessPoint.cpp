@@ -6,6 +6,8 @@
 #include "esp_mac.h"
 #include "esp_netif.h"
 
+#include <string.h>
+
 #define TAG "WiFiAccessPoint"
 
 void WiFiAccessPoint::event_handler_callback(void *arg, esp_event_base_t event_base, int32_t event_id, void* event_data)
@@ -78,9 +80,9 @@ bool WiFiAccessPoint::setup(const std::string &ssid, const std::string &password
     }
 
     memset(&wifi_config, 0, sizeof(wifi_config_t));
-	memcpy(wifi_config.ap.ssid, ssid.c_str(), ssid.length());
-    wifi_config.ap.ssid_len = ssid.length();
-    memcpy(wifi_config.ap.password, password.c_str(), password.length());
+    strlcpy(reinterpret_cast<char*>(wifi_config.ap.ssid), ssid.c_str(), sizeof(wifi_config.ap.ssid));
+    wifi_config.ap.ssid_len = strnlen(reinterpret_cast<const char*>(wifi_config.ap.ssid), sizeof(wifi_config.ap.ssid));
+    strlcpy(reinterpret_cast<char*>(wifi_config.ap.password), password.c_str(), sizeof(wifi_config.ap.password));
     wifi_config.ap.authmode = password.empty() ? WIFI_AUTH_OPEN : WIFI_AUTH_WPA2_PSK;
     wifi_config.ap.max_connection = 1;
 	wifi_config.ap.pmf_cfg.capable = true;

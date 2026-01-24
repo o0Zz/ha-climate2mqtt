@@ -5,7 +5,7 @@ const char WEB_UPGRADE_BODY[] =
 "    <h1>Firmware Upgrade</h1>\n"
 "    <form id=\"upgradeForm\" method=\"post\" action=\"/api/upgrade\">\n"
 "        <input type=\"file\" id=\"firmwareFile\" accept=\".bin\" required>\n"
-"        <div class=\"actions actions-center\">\n"
+"        <div class=\"actions\">\n"
 "            <button type=\"submit\">Upgrade</button>\n"
 "        </div>\n"
 "    </form>\n"

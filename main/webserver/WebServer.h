@@ -17,6 +17,7 @@ public:
 
 private:
     esp_err_t serve(httpd_req_t *req, const char *title, const std::string &pageContent);
+    esp_err_t serveLogsRaw(httpd_req_t *req);
 
     static esp_err_t request_handler(httpd_req_t *req);
 

@@ -26,6 +26,7 @@
 #include "systeminfo/ESP32SystemInfo.h"
 #include "led/Led.h"
 #include "version.h"
+#include "logs/LogBuffer.h"
 
 static const char *TAG = "MAIN";
 
@@ -69,6 +70,7 @@ void status_led_set(led::Led& led, LedStatus status)
 
 extern "C" void app_main(void)
 {
+	LogBuffer::init();
 	ESP_LOGI(TAG, "Starting Climate2MQTT application %s...", APP_VERSION);
 	iohub_platform_init();
 
