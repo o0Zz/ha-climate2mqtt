@@ -12,10 +12,9 @@ static const char* WEB_WIFI_BODY =
 "      <input id=\"wifi_hostname\" name=\"wifi_hostname\" type=\"text\" value=\"{{wifi_hostname}}\">\n"
 "      <label for=\"wifi_security\">Security</label>\n"
 "      <select id=\"wifi_security\" name=\"wifi_security\"></select>\n"
-"      <div class=\"actions\">\n"
+"      <div class=\"actions\" style=\"flex-direction:row; align-items:center;\">\n"
 "        <button type=\"submit\">Save</button>\n"
 "        <button type=\"button\" onclick=\"window.location='/'\">Cancel</button>\n"
 "      </div>\n"
 "    </form>\n"
-"    <a href=\"/\" class=\"back\">&larr; Back to Home</a>\n"
 "    <script> init_select(\"wifi_security\", \"{{wifi_security_list}}\", {{wifi_security}}); </script>\n";

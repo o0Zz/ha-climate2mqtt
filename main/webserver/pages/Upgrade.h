@@ -5,8 +5,9 @@ const char WEB_UPGRADE_BODY[] =
 "    <h1>Firmware Upgrade</h1>\n"
 "    <form id=\"upgradeForm\" method=\"post\" action=\"/api/upgrade\">\n"
 "        <input type=\"file\" id=\"firmwareFile\" accept=\".bin\" required>\n"
-"        <div class=\"actions\">\n"
+"        <div class=\"actions\" style=\"flex-direction:row; align-items:center;\">\n"
 "            <button type=\"submit\">Upgrade</button>\n"
+"            <button type=\"button\" onclick=\"window.location='/'\">Cancel</button>\n"
 "        </div>\n"
 "    </form>\n"
 "    <div id=\"result\"></div>\n"
@@ -37,5 +38,4 @@ const char WEB_UPGRADE_BODY[] =
 "        };\n"
 "        xhr.send(file);\n"
 "    };\n"
-"    </script>\n"
-"    <a href=\"/\" class=\"back\">&larr; Back to Home</a>\n";
+"    </script>\n";

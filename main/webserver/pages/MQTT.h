@@ -12,9 +12,8 @@ static const char* WEB_MQTT_BODY =
 "      <input id=\"mqtt_password\" name=\"mqtt_password\" type=\"password\" value=\"{{mqtt_password}}\">\n"
 "      <label for=\"mqtt_unique_id\">Unique ID</label>\n"
 "      <input id=\"mqtt_unique_id\" name=\"mqtt_unique_id\" type=\"text\" value=\"{{mqtt_unique_id}}\">\n"
-"      <div class=\"actions\">\n"
+"      <div class=\"actions\" style=\"flex-direction:row; align-items:center;\">\n"
 "        <button type=\"submit\">Save</button>\n"
 "        <button type=\"button\" onclick=\"window.location='/'\">Cancel</button>\n"
 "      </div>\n"
-"    </form>\n"
-"    <a href=\"/\" class=\"back\">&larr; Back to Home</a>\n";
+"    </form>\n";

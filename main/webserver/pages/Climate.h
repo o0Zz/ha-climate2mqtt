@@ -12,10 +12,9 @@ static const char* WEB_CLIMATE_BODY =
 "      <input id=\"climate_tx_pin\" name=\"climate_tx_pin\" type=\"text\" value=\"{{climate_tx_pin}}\">\n"
 "      <label for=\"climate_rx_pin\">UART RX Pin</label>\n"
 "      <input id=\"climate_rx_pin\" name=\"climate_rx_pin\" type=\"text\" value=\"{{climate_rx_pin}}\">\n"
-"      <div class=\"actions\">\n"
+"      <div class=\"actions\" style=\"flex-direction:row; align-items:center;\">\n"
 "        <button type=\"submit\">Save</button>\n"
 "        <button type=\"button\" onclick=\"window.location='/'\">Cancel</button>\n"
 "      </div>\n"
 "    </form>\n"
-"    <a href=\"/\" class=\"back\">&larr; Back to Home</a>\n"
 "    <script> init_select(\"climate_type\", \"{{climate_type_list}}\", {{climate_type}}); </script>\n";

@@ -33,12 +33,17 @@ public:
     }
 
     std::string getIPAddress() const override {
-        // Placeholder implementation; actual implementation would retrieve IP from network interface
+        esp_netif_ip_info_t ipInfo;
+        esp_netif_t *netif = esp_netif_get_handle_from_ifkey("WIFI_STA_DEF");
+        if (netif != nullptr && esp_netif_get_ip_info(netif, &ipInfo) == ESP_OK) {
+            char ipStr[16];
+            snprintf(ipStr, sizeof(ipStr), IPSTR, IP2STR(&ipInfo.ip));
+            return std::string(ipStr);
+        }
         return "";
     }
 
     std::string getHostname() const override {
-#if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(4, 1, 0)
         esp_netif_t *netif = esp_netif_get_handle_from_ifkey("WIFI_STA_DEF");
         if (netif != nullptr) {
             const char *hostname = nullptr;
@@ -46,7 +51,6 @@ public:
                 return std::string(hostname);
             }
         }
-#endif
         return "";
     }
 

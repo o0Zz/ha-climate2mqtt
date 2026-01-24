@@ -3,8 +3,8 @@
 static const char* WEB_HOME_TITLE = "Climate2MQTT Settings";
 static const char* WEB_HOME_BODY =
 "    <h1>Climate2MQTT Settings</h1>\n"
-"    <p>ESP-IDF based climate control system v{{app_version}} ({{hostname}} {{mac_address}})</p>\n"
-"    <div class=\"actions\">\n"
+"    <p>ESP-IDF based climate control system <b>v{{app_version}}</b></p>\n"
+"    <div class=\"actions actions-centered\">\n"
 
 "      <button type=\"button\" onclick=\"window.location='/wifi'\"><span class=\"icon\">\n"
 "       <svg viewBox=\"0 0 640 640\" width=\"24\" height=\"24\">\n"
@@ -26,16 +26,22 @@ static const char* WEB_HOME_BODY =
 "           <path d=\"M128 144C128 130.7 138.7 120 152 120L488 120C501.3 120 512 130.7 512 144C512 157.3 501.3 168 488 168L152 168C138.7 168 128 157.3 128 144zM128 288C128 274.7 138.7 264 152 264L488 264C501.3 264 512 274.7 512 288C512 301.3 501.3 312 488 312L152 312C138.7 312 128 301.3 128 288zM128 432C128 418.7 138.7 408 152 408L488 408C501.3 408 512 418.7 512 432C512 445.3 501.3 456 488 456L152 456C138.7 456 128 445.3 128 432z\" fill=\"white\"/>\n"
 "       </svg></span>View Logs</button>\n"
 
+"    </div>\n"
+"    <h2>Current Configuration</h2>\n"
+"    <div class=\"config-item\">\n"
+"      <div class=\"config-line\"><span class=\"config-label\">WiFi SSID:</span><span class=\"config-value\">{{wifi_ssid}}</span></div>\n"
+"      <div class=\"config-line\"><span class=\"config-label\">Hostname:</span><span class=\"config-value\">{{hostname}}</span></div>\n"
+"      <div class=\"config-line\"><span class=\"config-label\">MAC Address:</span><span class=\"config-value\">{{mac_address}}</span></div>\n"
+"      <div class=\"config-line\"><span class=\"config-label\">IP Address:</span><span class=\"config-value\">{{ip_address}}</span></div>\n"
+"      <div class=\"config-line\"><span class=\"config-label\">MQTT Broker:</span><span class=\"config-value\">{{mqtt_broker_uri}}</span></div>\n"
+"      <div class=\"config-line\"><span class=\"config-label\">HomeAssistant Unique ID:</span><span class=\"config-value\">{{mqtt_unique_id}}</span></div>\n"
+"    </div>\n"
+
+"    <div class=\"actions actions-centered\" style=\"flex-direction:row; align-items:center;\">\n"
 "       <button type=\"button\" onclick=\"window.location='/upgrade'\"><span class=\"icon\">\n"
 "       <svg viewBox=\"0 0 640 640\" width=\"24\" height=\"24\">\n"
 "           <path d=\"M342.6 73.4C330.1 60.9 309.8 60.9 297.3 73.4L169.3 201.4C156.8 213.9 156.8 234.2 169.3 246.7C181.8 259.2 202.1 259.2 214.6 246.7L288 173.3L288 384C288 401.7 302.3 416 320 416C337.7 416 352 401.7 352 384L352 173.3L425.4 246.7C437.9 259.2 458.2 259.2 470.7 246.7C483.2 234.2 483.2 213.9 470.7 201.4L342.7 73.4zM160 416C160 398.3 145.7 384 128 384C110.3 384 96 398.3 96 416L96 480C96 533 139 576 192 576L448 576C501 576 544 533 544 480L544 416C544 398.3 529.7 384 512 384C494.3 384 480 398.3 480 416L480 480C480 497.7 465.7 512 448 512L192 512C174.3 512 160 497.7 160 480L160 416z\" fill=\"white\"/>\n"
 "       </svg></span>Upgrade Firmware</button>\n"
-
-"      <form id=\"rebootForm\" method=\"POST\" action=\"/reboot\" style=\"display:inline;\"></form>\n"
-"      <button type=\"button\" onclick=\"if(confirm('Reboot to apply configuration?')) document.getElementById('rebootForm').submit();\"><span class=\"icon\">\n"
-"       <svg viewBox=\"0 0 24 24\" width=\"24\" height=\"24\" fill=\"white\" aria-hidden=\"true\">\n"
-"           <path fill-rule=\"evenodd\" d=\"M12 2.25a.75.75 0 01.75.75v7.5a.75.75 0 01-1.5 0V3a.75.75 0 01.75-.75zM7.002 5.905a.75.75 0 011.06.122 7.5 7.5 0 106.876-2.78.75.75 0 01.374-1.451A9 9 0 113.122 5.845a.75.75 0 01.88.06z\" clip-rule=\"evenodd\"/>\n"
-"       </svg></span>Reboot to Apply</button>\n"
 
 "      <form id=\"clearConfigForm\" method=\"POST\" action=\"/clear_config\" style=\"display:inline;\"></form>\n"
 "      <button type=\"button\" onclick=\"if(confirm('Clear all configuration?')) document.getElementById('clearConfigForm').submit();\"><span class=\"icon\">\n"
@@ -43,14 +49,9 @@ static const char* WEB_HOME_BODY =
 "           <path d=\"M224 112C224 94.3 238.3 80 256 80L384 80C401.7 80 416 94.3 416 112L416 128L512 128C529.7 128 544 142.3 544 160C544 177.7 529.7 192 512 192L496 192L474.2 520.6C472.5 545 452.2 564 427.7 564L212.3 564C187.8 564 167.5 545 165.8 520.6L144 192L128 192C110.3 192 96 177.7 96 160C96 142.3 110.3 128 128 128L224 128L224 112zM256 128L384 128L384 112L256 112L256 128zM216 248C216 230.3 230.3 216 248 216C265.7 216 280 230.3 280 248L280 496C280 513.7 265.7 528 248 528C230.3 528 216 513.7 216 496L216 248zM360 248C360 230.3 374.3 216 392 216C409.7 216 424 230.3 424 248L424 496C424 513.7 409.7 528 392 528C374.3 528 360 513.7 360 496L360 248z\" fill=\"white\"/>\n"
 "       </svg></span>Clear Configuration</button>\n"
 
-"    </div>\n"
-"    <h2>Current Configuration</h2>\n"
-"    <div class=\"config-item\">\n"
-"      <span class=\"config-label\">WiFi SSID:</span><span class=\"config-value\">{{wifi_ssid}}</span>\n"
-"    </div>\n"
-"    <div class=\"config-item\">\n"
-"      <span class=\"config-label\">MQTT Broker:</span><span class=\"config-value\">{{mqtt_broker_uri}}</span>\n"
-"    </div>\n"
-"    <div class=\"config-item\">\n"
-"      <span class=\"config-label\">Unique ID:</span><span class=\"config-value\">{{mqtt_unique_id}}</span>\n"
-"    </div>\n";
+"      <form id=\"rebootForm\" method=\"POST\" action=\"/reboot\" style=\"display:inline;\"></form>\n"
+"      <button type=\"button\" onclick=\"if(confirm('Reboot to apply configuration?')) document.getElementById('rebootForm').submit();\"><span class=\"icon\">\n"
+"      <svg viewBox=\"0 0 24 24\" width=\"24\" height=\"24\" fill=\"none\" stroke=\"white\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><line x1=\"12\" y1=\"2\" x2=\"12\" y2=\"12\" />"
+"         <path d=\"M5.5 5.5a9 9 0 1 0 13 0\" />"
+"      </svg></span>Reboot to Apply</button>\n"
+"  </div>\n";
