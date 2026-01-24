@@ -2,16 +2,21 @@ cmake_minimum_required(VERSION 3.5)
 
 include($ENV{IDF_PATH}/tools/cmake/project.cmake)
 
+project(ha-climate2mqtt)
+
 # ----------------------------------------------------------------------------
-# Partition table selection
+# Partition table selection (requires CONFIG_* variables from sdkconfig)
 # ----------------------------------------------------------------------------
 set(PARTITION_TABLE_CSV "${CMAKE_SOURCE_DIR}/partitions_no_ota.csv")
 if(CONFIG_ENABLE_OTA)
     set(PARTITION_TABLE_CSV "${CMAKE_SOURCE_DIR}/partitions_ota.csv")
 endif()
-configure_file(${PARTITION_TABLE_CSV} ${CMAKE_SOURCE_DIR}/partitions.csv COPYONLY)
 
-project(ha-climate2mqtt)
+# Ensure ESP-IDF uses the selected table
+set(PARTITION_TABLE_CSV "${PARTITION_TABLE_CSV}" CACHE FILEPATH "Partition table CSV" FORCE)
+
+message(STATUS "Using partition table: ${PARTITION_TABLE_CSV} (CONFIG_ENABLE_OTA=${CONFIG_ENABLE_OTA})")
+configure_file(${PARTITION_TABLE_CSV} ${CMAKE_SOURCE_DIR}/partitions.csv COPYONLY)
 
 # ============================================================================
 # Git Version Information

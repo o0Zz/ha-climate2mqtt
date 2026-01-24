@@ -3,7 +3,7 @@
 const char WEB_UPGRADE_TITLE[] = "Upgrade";
 const char WEB_UPGRADE_BODY[] =
 "    <h1>Firmware Upgrade</h1>\n"
-"    <form id=\"upgradeForm\" method=\"post\" action=\"/api/upgrade\">\n"
+"    <form id=\"upgradeForm\" method=\"post\" action=\"/upgrade\">\n"
 "        <input type=\"file\" id=\"firmwareFile\" accept=\".bin\" required>\n"
 "        <div class=\"actions\" style=\"flex-direction:row; align-items:center;\">\n"
 "            <button type=\"submit\">Upgrade</button>\n"
@@ -22,7 +22,7 @@ const char WEB_UPGRADE_BODY[] =
 "        const file = fileInput.files[0];\n"
 "        document.getElementById('result').textContent = 'Uploading...';\n"
 "        const xhr = new XMLHttpRequest();\n"
-"        xhr.open('POST', '/api/upgrade', true);\n"
+"        xhr.open('POST', '/upgrade', true);\n"
 "        xhr.setRequestHeader('Content-Type', 'application/octet-stream');\n"
 "        xhr.upload.onprogress = function(event) {\n"
 "            if (event.lengthComputable) {\n"
