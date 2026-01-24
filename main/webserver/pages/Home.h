@@ -35,6 +35,8 @@ static const char* WEB_HOME_BODY =
 "      <div class=\"config-line\"><span class=\"config-label\">IP Address:</span><span class=\"config-value\">{{ip_address}}</span></div>\n"
 "      <div class=\"config-line\"><span class=\"config-label\">MQTT Broker:</span><span class=\"config-value\">{{mqtt_broker_uri}}</span></div>\n"
 "      <div class=\"config-line\"><span class=\"config-label\">HomeAssistant Unique ID:</span><span class=\"config-value\">{{mqtt_unique_id}}</span></div>\n"
+"      <div class=\"config-line\"><span class=\"config-label\">UpTime:</span><span class=\"config-value\">{{uptime_hours}} hour(s)</span></div>\n"
+
 "    </div>\n"
 
 "    <div class=\"actions actions-centered\" style=\"flex-direction:row; align-items:center;\">\n"

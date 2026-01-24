@@ -86,6 +86,7 @@ esp_err_t WebServer::serve(httpd_req_t *req, const char *title, const std::strin
     vars["ip_address"] = systemInfo->getIPAddress();
     vars["hostname"] = systemInfo->getHostname();
     vars["uptime_seconds"] = std::to_string(systemInfo->getUptimeSeconds());
+    vars["uptime_hours"] = std::to_string(systemInfo->getUptimeSeconds() / 3600);
     vars["free_heap_bytes"] =  std::to_string(systemInfo->getFreeHeapBytes());
     vars["total_heap_bytes"] = std::to_string(systemInfo->getTotalHeapBytes());
     vars["chip_model"] = systemInfo->getChipModel();
