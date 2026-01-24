@@ -3,7 +3,8 @@
 const char WEB_UPGRADE_TITLE[] = "Upgrade";
 const char WEB_UPGRADE_BODY[] =
 "    <h1>Firmware Upgrade</h1>\n"
-"    <form id=\"upgradeForm\" method=\"post\" action=\"/upgrade\">\n"
+"    <p>Select a firmware binary file (ha-climate2mqtt.bin) from build/ folder</p>\n"
+"    <form id=\"upgradeForm\" method=\"post\">\n"
 "        <input type=\"file\" id=\"firmwareFile\" accept=\".bin\" required>\n"
 "        <div class=\"actions\" style=\"flex-direction:row; align-items:center;\">\n"
 "            <button type=\"submit\">Upgrade</button>\n"
