@@ -9,8 +9,6 @@
 #include "freertos/portmacro.h"
 #include "esp_log.h"
 
-#include "utils/iohub_logs.h"
-
 namespace {
     constexpr size_t kLogBufferSize = 32 * 1024;
 

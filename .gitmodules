@@ -1,3 +1,3 @@
-[submodule "components/libiohub"]
-	path = components/libiohub
-	url = https://github.com/o0Zz/libiohub.git
+[submodule "components/climate-uart"]
+	path = components/climate-uart
+	url = https://github.com/o0Zz/climate-uart.git

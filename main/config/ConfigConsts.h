@@ -40,14 +40,20 @@ enum class ClimateType {
     UNKNOWN = 0,
     MITSUBISHI = 1,
     TOSHIBA = 2,
-    IR_MIDEA = 3
+    DAIKIN_S21 = 3,
+    HITACHI_HLINK = 4,
+    LG_AIRCON = 5,
+    SHARP = 6
 };
 
 static const char *ClimateTypeStr[] = {
     "Unknown",
     "Mitsubishi",
     "Toshiba",
-    "IR_Midea",
+    "Daikin_S21",
+    "Hitachi_HLink",
+    "LG_AirCon",
+    "Sharp",
     nullptr
 };
 

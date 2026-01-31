@@ -52,8 +52,8 @@ static const char* WEB_HOME_BODY =
 "       </svg></span>Clear Configuration</button>\n"
 
 "      <form id=\"rebootForm\" method=\"POST\" action=\"/reboot\" style=\"display:inline;\"></form>\n"
-"      <button type=\"button\" onclick=\"if(confirm('Reboot to apply configuration?')) document.getElementById('rebootForm').submit();\"><span class=\"icon\">\n"
+"      <button type=\"button\" onclick=\"if(confirm('Are you sure ?')) document.getElementById('rebootForm').submit();\"><span class=\"icon\">\n"
 "      <svg viewBox=\"0 0 24 24\" width=\"24\" height=\"24\" fill=\"none\" stroke=\"white\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><line x1=\"12\" y1=\"2\" x2=\"12\" y2=\"12\" />"
 "         <path d=\"M5.5 5.5a9 9 0 1 0 13 0\" />"
-"      </svg></span>Reboot to Apply</button>\n"
+"      </svg></span>Apply & Reboot</button>\n"
 "  </div>\n";

@@ -6,15 +6,12 @@
 #include "freertos/queue.h"
 #include "freertos/event_groups.h"
 
-#include "iohub.h"
-
 #include "webserver/WebServer.h"
 
 #include "mqtt/HAMqttClimateImpl.h"
 
-#include "climate/MitsubishiClimate.h"
-#include "climate/ToshibaClimate.h"
-#include "climate/IRMideaClimate.h"
+#include "climate/UartClimate.h"
+
 #include "climate/EmptyClimate.h"
 
 #include "config/EspNVSConfig.h"
@@ -27,6 +24,7 @@
 #include "led/Led.h"
 #include "version.h"
 #include "logs/LogBuffer.h"
+#include "esp_log.h"
 
 static const char *TAG = "MAIN";
 
@@ -72,15 +70,14 @@ extern "C" void app_main(void)
 {
 	LogBuffer::init();
 	ESP_LOGI(TAG, "Starting Climate2MQTT application %s...", APP_VERSION);
-	iohub_platform_init();
 
 	led::Led statusLed(STATUS_LED_GPIO);
 	statusLed.setBrightness(10);
 
 	status_led_set(statusLed, LedStatus::CONNECTING);  // Blue - starting up
 
-	EspNVSConfig config;
-	if (!config.load()) {
+	auto config = std::make_unique<EspNVSConfig>();
+	if (!config->load()) {
 		ESP_LOGE(TAG, "Failed to load configuration from NVS");
 		status_led_set(statusLed, LedStatus::ERROR);  // Red - config error
 		return;
@@ -96,25 +93,25 @@ extern "C" void app_main(void)
         ESP_LOGE(TAG, "esp_event_loop_create_default failed: %s", esp_err_to_name(err));
     }	
 
-    std::unique_ptr<systeminfo::ISystemInfo> systemInfo = std::make_unique<systeminfo::ESP32SystemInfo>();
-	WebServer webServer(config, std::move(systemInfo));
-	webServer.start(80);  // Start on port 80
+	std::unique_ptr<systeminfo::ISystemInfo> systemInfo = std::make_unique<systeminfo::ESP32SystemInfo>();
+	std::unique_ptr<WebServer> webServer = std::make_unique<WebServer>(*config, std::move(systemInfo));
+	webServer->start(80);  // Start on port 80
 
-	WiFiClient wifiClient;
+	auto wifiClient = std::make_unique<WiFiClient>();
 
 	status_led_set(statusLed, LedStatus::CONNECTING);  // Blue - connecting to WiFi
-	if (!wifiClient.setup(config.getString(CONF_WIFI_SSID), config.getString(CONF_WIFI_PASSWORD), config.getString(CONF_WIFI_HOSTNAME))) {
+	if (!wifiClient->setup(config->getString(CONF_WIFI_SSID), config->getString(CONF_WIFI_PASSWORD), config->getString(CONF_WIFI_HOSTNAME))) {
 		ESP_LOGE(TAG, "Failed to setup WiFi client");
 		status_led_set(statusLed, LedStatus::ERROR);  // Red - WiFi setup error
 		return;
 	}
 
-	if (!wifiClient.connect()) {
+	if (!wifiClient->connect()) {
 		ESP_LOGE(TAG, "Failed to connect to WiFi, creating access point for 1 min then reboot...");
 		status_led_set(statusLed, LedStatus::ERROR);  // Red - WiFi connection failed
 		
 		WiFiAccessPoint wifiAP;
-		if (!wifiAP.setup("Climate2MQTT_Setup", "", config.getString(CONF_WIFI_HOSTNAME))) {
+		if (!wifiAP.setup("Climate2MQTT_Setup", "", config->getString(CONF_WIFI_HOSTNAME))) {
 			ESP_LOGE(TAG, "Failed to setup WiFi access point");
 			return;
 		}
@@ -126,36 +123,53 @@ extern "C" void app_main(void)
 
 		status_led_set(statusLed, LedStatus::WAITING_SETUP);  // Blinking red - awaiting user configuration
 
-		u32 timeout_start = IOHUB_TIMER_START();
-		while (IOHUB_TIMER_ELAPSED(timeout_start) < AP_TIMEOUT_MS)
+		
+		uint32_t timeout_start = climate_uart::time_now_ms();
+		while ((climate_uart::time_now_ms() - timeout_start) < AP_TIMEOUT_MS)
 		{
-			ESP_LOGI(TAG, "Access Point active for configuration (%d seconds remaining)...", (AP_TIMEOUT_MS - IOHUB_TIMER_ELAPSED(timeout_start)) / 1000);
+			ESP_LOGI(TAG, "Access Point active for configuration (%d seconds remaining)...", (AP_TIMEOUT_MS - (climate_uart::time_now_ms() - timeout_start)) / 1000);
 			vTaskDelay(pdMS_TO_TICKS(5000));
 
 			if (wifiAP.clientCountConnected() > 0)
-				timeout_start = IOHUB_TIMER_START(); // Reset timer if a client is connected
+				timeout_start = climate_uart::time_now_ms(); // Reset timer if a client is connected
 		}
 
 		ESP_LOGI(TAG, "Rebooting to apply configuration...");
 		esp_restart();
 	}
 
-	
+	auto uartTransport = std::make_unique<climate_uart::transport::UartTransportESP32>(UART_NUM_1, config->getInt32(CONF_CLIMATE_TX_PIN), config->getInt32(CONF_CLIMATE_RX_PIN));
 	std::shared_ptr<IClimate> climate = nullptr;
-	if (config.getInt32("climate_type", (int32_t)ClimateType::UNKNOWN) == (int32_t)ClimateType::MITSUBISHI)
+	
+	if (config->getInt32("climate_type", (int32_t)ClimateType::UNKNOWN) == (int32_t)ClimateType::MITSUBISHI)
 	{
 		ESP_LOGI(TAG, "Using Mitsubishi Climate interface");
-		climate = std::make_shared<MitsubishiClimate>(config.getInt32(CONF_CLIMATE_TX_PIN), config.getInt32(CONF_CLIMATE_RX_PIN));
+		climate = std::make_shared<UartClimate>( std::make_shared<climate_uart::protocols::Mitsubishi>(*uartTransport) );
 	}
-	else if (config.getInt32("climate_type", (int32_t)ClimateType::UNKNOWN) == (int32_t)ClimateType::TOSHIBA)
+	else if (config->getInt32("climate_type", (int32_t)ClimateType::UNKNOWN) == (int32_t)ClimateType::TOSHIBA)
 	{
 		ESP_LOGI(TAG, "Using Toshiba Climate interface");
-		climate = std::make_shared<ToshibaClimate>(config.getInt32(CONF_CLIMATE_TX_PIN), config.getInt32(CONF_CLIMATE_RX_PIN));
+		climate = std::make_shared<UartClimate>( std::make_shared<climate_uart::protocols::Toshiba>(*uartTransport) );
 	}
-	else if (config.getInt32("climate_type", (int32_t)ClimateType::UNKNOWN) == (int32_t)ClimateType::IR_MIDEA)
+	else if (config->getInt32("climate_type", (int32_t)ClimateType::UNKNOWN) == (int32_t)ClimateType::DAIKIN_S21)
 	{
-		ESP_LOGI(TAG, "Using Midea Climate interface");
-		climate = std::make_shared<IRMideaClimate>(config.getInt32(CONF_CLIMATE_TX_PIN), config.getInt32(CONF_CLIMATE_RX_PIN));
+		ESP_LOGI(TAG, "Using Daikin Climate interface");
+		climate = std::make_shared<UartClimate>( std::make_shared<climate_uart::protocols::DaikinS21>(*uartTransport) );
+	}
+	else if (config->getInt32("climate_type", (int32_t)ClimateType::UNKNOWN) == (int32_t)ClimateType::HITACHI_HLINK)
+	{
+		ESP_LOGI(TAG, "Using Hitachi HLink Climate interface");
+		climate = std::make_shared<UartClimate>( std::make_shared<climate_uart::protocols::HitachiHLink>(*uartTransport) );
+	}
+	else if (config->getInt32("climate_type", (int32_t)ClimateType::UNKNOWN) == (int32_t)ClimateType::LG_AIRCON)
+	{
+		ESP_LOGI(TAG, "Using LG AirCon Climate interface");
+		climate = std::make_shared<UartClimate>( std::make_shared<climate_uart::protocols::LgAircon>(*uartTransport) );
+	}
+	else if (config->getInt32("climate_type", (int32_t)ClimateType::UNKNOWN) == (int32_t)ClimateType::SHARP)
+	{
+		ESP_LOGI(TAG, "Using Sharp Climate interface");
+		climate = std::make_shared<UartClimate>( std::make_shared<climate_uart::protocols::Sharp>(*uartTransport) );
 	}
 	else
 	{
@@ -170,10 +184,10 @@ extern "C" void app_main(void)
 		//TODO: return error to webinterface ?
 	}
 
-	std::string unique_id = config.getString(CONF_MQTT_UNIQUE_ID);
+	std::string unique_id = config->getString(CONF_MQTT_UNIQUE_ID);
 	ESP_LOGI(TAG, "Initializing HA Climate MQTT (%s) ...", unique_id.c_str());
 
-	HAMqttClimateImpl *climateMqtt = new HAMqttClimateImpl(climate, config.getString(CONF_MQTT_BROKER_URI), config.getString(CONF_MQTT_USER), config.getString(CONF_MQTT_PASSWORD), std::string("climate2mqtt/") + unique_id, unique_id);
+	HAMqttClimateImpl *climateMqtt = new HAMqttClimateImpl(climate, config->getString(CONF_MQTT_BROKER_URI), config->getString(CONF_MQTT_USER), config->getString(CONF_MQTT_PASSWORD), std::string("climate2mqtt/") + unique_id, unique_id);
     climateMqtt->start();
 
 	status_led_set(statusLed, LedStatus::CONNECTING);  // Blue - connecting to MQTT
@@ -183,15 +197,14 @@ extern "C" void app_main(void)
 		climateMqtt->refresh();
 
 		// Update LED status based on connection states
-		if (!wifiClient.isConnected()) {
+		if (!wifiClient->isConnected()) {
 			status_led_set(statusLed, LedStatus::ERROR);  // Red - WiFi disconnected
 		} else if (!climateMqtt->isConnected()) {
 			status_led_set(statusLed, LedStatus::CONNECTING);  // Blue - MQTT connecting/reconnecting
 		} else {
 			status_led_set(statusLed, LedStatus::OK);  // Green - all systems operational
 		}
-
-		vTaskDelay(pdMS_TO_TICKS(config.getInt32(CONF_CLIMATE_POLLING_MS, 1000)));
+		vTaskDelay(pdMS_TO_TICKS(config->getInt32(CONF_CLIMATE_POLLING_MS, 1000)));
 	}
 
 	// Never reached
