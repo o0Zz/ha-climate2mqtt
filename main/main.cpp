@@ -1,5 +1,8 @@
 #include <stdio.h>
 #include <string.h>
+#include <algorithm>
+#include <functional>
+#include <memory>
 
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
@@ -31,6 +34,23 @@ static const char *TAG = "MAIN";
 #define AP_TIMEOUT_MS 60000
 #define STATUS_LED_GPIO 8  // ESP32-C6 onboard RGB LED
 
+struct ClimateFactoryEntry
+{
+	ClimateType type;
+	const char *label;
+	std::function<std::shared_ptr<IClimate>(climate_uart::transport::UartTransportESP32&)> factory;
+};
+
+// Map climate types to their corresponding UART protocol builders.
+static const ClimateFactoryEntry CLIMATE_FACTORIES[] = {
+	{ ClimateType::MITSUBISHI,    "Mitsubishi",    [](auto &transport) { return std::make_shared<UartClimate>(std::make_shared<climate_uart::protocols::Mitsubishi>(transport)); } },
+	{ ClimateType::TOSHIBA,       "Toshiba",       [](auto &transport) { return std::make_shared<UartClimate>(std::make_shared<climate_uart::protocols::Toshiba>(transport)); } },
+	{ ClimateType::DAIKIN_S21,    "Daikin",        [](auto &transport) { return std::make_shared<UartClimate>(std::make_shared<climate_uart::protocols::DaikinS21>(transport)); } },
+	{ ClimateType::HITACHI_HLINK, "Hitachi HLink", [](auto &transport) { return std::make_shared<UartClimate>(std::make_shared<climate_uart::protocols::HitachiHLink>(transport)); } },
+	{ ClimateType::LG_AIRCON,     "LG AirCon",     [](auto &transport) { return std::make_shared<UartClimate>(std::make_shared<climate_uart::protocols::LgAircon>(transport)); } },
+	{ ClimateType::SHARP,         "Sharp",         [](auto &transport) { return std::make_shared<UartClimate>(std::make_shared<climate_uart::protocols::Sharp>(transport)); } }
+};
+
 enum class LedStatus {
     OFF,            // LED off
     CONNECTING,     // Blue - connecting to WiFi/MQTT/Climate
@@ -48,19 +68,19 @@ void status_led_set(led::Led& led, LedStatus status)
             led.off();
             break;
         case LedStatus::CONNECTING:
-            led.setColor(0, 0, 255);
+            led.setColor(0, 0, 255); //Blue
             led.on();
             break;
         case LedStatus::OK:
-            led.setColor(0, 255, 0);
+            led.setColor(0, 255, 0); //Green
             led.on();
             break;
         case LedStatus::ERROR:
-            led.setColor(255, 0, 0);
+            led.setColor(255, 0, 0); //Red
             led.on();
             break;
         case LedStatus::WAITING_SETUP:
-            led.setColor(0, 0, 255);
+            led.setColor(0, 0, 255); //Green blinkings
             led.on(BLINK_PERIOD_US);
             break;
     }
@@ -139,37 +159,17 @@ extern "C" void app_main(void)
 	}
 
 	auto uartTransport = std::make_unique<climate_uart::transport::UartTransportESP32>(UART_NUM_1, config->getInt32(CONF_CLIMATE_TX_PIN), config->getInt32(CONF_CLIMATE_RX_PIN));
+	const auto climateType = static_cast<ClimateType>(config->getInt32("climate_type", static_cast<int32_t>(ClimateType::UNKNOWN)));
 	std::shared_ptr<IClimate> climate = nullptr;
-	
-	if (config->getInt32("climate_type", (int32_t)ClimateType::UNKNOWN) == (int32_t)ClimateType::MITSUBISHI)
+
+	const auto factoryIt = std::find_if(std::begin(CLIMATE_FACTORIES), std::end(CLIMATE_FACTORIES), [climateType](const ClimateFactoryEntry &entry) {
+		return entry.type == climateType;
+	});
+
+	if (factoryIt != std::end(CLIMATE_FACTORIES))
 	{
-		ESP_LOGI(TAG, "Using Mitsubishi Climate interface");
-		climate = std::make_shared<UartClimate>( std::make_shared<climate_uart::protocols::Mitsubishi>(*uartTransport) );
-	}
-	else if (config->getInt32("climate_type", (int32_t)ClimateType::UNKNOWN) == (int32_t)ClimateType::TOSHIBA)
-	{
-		ESP_LOGI(TAG, "Using Toshiba Climate interface");
-		climate = std::make_shared<UartClimate>( std::make_shared<climate_uart::protocols::Toshiba>(*uartTransport) );
-	}
-	else if (config->getInt32("climate_type", (int32_t)ClimateType::UNKNOWN) == (int32_t)ClimateType::DAIKIN_S21)
-	{
-		ESP_LOGI(TAG, "Using Daikin Climate interface");
-		climate = std::make_shared<UartClimate>( std::make_shared<climate_uart::protocols::DaikinS21>(*uartTransport) );
-	}
-	else if (config->getInt32("climate_type", (int32_t)ClimateType::UNKNOWN) == (int32_t)ClimateType::HITACHI_HLINK)
-	{
-		ESP_LOGI(TAG, "Using Hitachi HLink Climate interface");
-		climate = std::make_shared<UartClimate>( std::make_shared<climate_uart::protocols::HitachiHLink>(*uartTransport) );
-	}
-	else if (config->getInt32("climate_type", (int32_t)ClimateType::UNKNOWN) == (int32_t)ClimateType::LG_AIRCON)
-	{
-		ESP_LOGI(TAG, "Using LG AirCon Climate interface");
-		climate = std::make_shared<UartClimate>( std::make_shared<climate_uart::protocols::LgAircon>(*uartTransport) );
-	}
-	else if (config->getInt32("climate_type", (int32_t)ClimateType::UNKNOWN) == (int32_t)ClimateType::SHARP)
-	{
-		ESP_LOGI(TAG, "Using Sharp Climate interface");
-		climate = std::make_shared<UartClimate>( std::make_shared<climate_uart::protocols::Sharp>(*uartTransport) );
+		ESP_LOGI(TAG, "Using %s Climate interface", factoryIt->label);
+		climate = factoryIt->factory(*uartTransport);
 	}
 	else
 	{
@@ -181,7 +181,6 @@ extern "C" void app_main(void)
 	{
 		ESP_LOGE(TAG, "Failed to setup climate ...");
 		status_led_set(statusLed, LedStatus::ERROR);  // Red - climate setup error
-		//TODO: return error to webinterface ?
 	}
 
 	std::string unique_id = config->getString(CONF_MQTT_UNIQUE_ID);
