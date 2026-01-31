@@ -22,6 +22,7 @@ The connector provides a **UART (serial) interface** with the following paramete
 ### Physical Connector
 
 ![Toshiba Connector](img/toshiba_connector.png)
+![Toshiba Plugged](img/toshiba_plug.jpg)
 
 - **Type:** JST female connector  
 - **Pitch:** 2.00 mm   
