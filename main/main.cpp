@@ -14,7 +14,6 @@
 #include "mqtt/HAMqttClimateImpl.h"
 
 #include "climate/UartClimate.h"
-
 #include "climate/EmptyClimate.h"
 
 #include "config/EspNVSConfig.h"
@@ -88,6 +87,8 @@ void status_led_set(led::Led& led, LedStatus status)
 
 extern "C" void app_main(void)
 {
+	esp_log_level_set("climate-uart", ESP_LOG_DEBUG);
+	
 	LogBuffer::init();
 	ESP_LOGI(TAG, "Starting Climate2MQTT application %s...", APP_VERSION);
 
