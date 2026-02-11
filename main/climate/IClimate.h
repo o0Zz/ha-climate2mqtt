@@ -11,7 +11,7 @@ typedef enum {
 
 typedef enum {
     HAClimateFanMode_Auto = 0,
-    HAClimateFanMode_Diffuse = 1, //Quiet
+    HAClimateFanMode_Quiet = 1,
     HAClimateFanMode_Low = 2,
     HAClimateFanMode_Medium = 3,
     HAClimateFanMode_High = 4

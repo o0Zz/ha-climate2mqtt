@@ -98,7 +98,7 @@ bool UartClimate::updateState()
     climate_uart::ClimateSettings settings;
 
     HAMqttToUart(this->fan_mode, this->mode, this->vane_mode, this->target_temp, settings);
-    ESP_LOGI(TAG, "Updating Midea Heatpump state: Action=%s, Mode=%d, Temp=%d, Fan=%d, Vane=%d",
+    ESP_LOGI(TAG, "Updating Climate state: Action=%s, Mode=%d, Temp=%d, Fan=%d, Vane=%d",
              settings.action == climate_uart::HeatpumpAction::On ? "ON": "OFF",
              settings.mode,
              settings.temperature,
@@ -123,8 +123,8 @@ bool UartClimate::HAMqttToUart(HAClimateFanMode fanMode,
         case HAClimateFanMode_Auto:
             outParams.fanSpeed = HeatpumpFanSpeed::Auto;
             break;
-        case HAClimateFanMode_Diffuse:
-            outParams.fanSpeed = HeatpumpFanSpeed::Low;
+        case HAClimateFanMode_Quiet:
+            outParams.fanSpeed = HeatpumpFanSpeed::Quiet;
             break;
         case HAClimateFanMode_Low:
             outParams.fanSpeed = HeatpumpFanSpeed::Low;
@@ -242,6 +242,8 @@ bool UartClimate::UartToHAMqtt(const ClimateSettings &inParams,
         outFanMode = HAClimateFanMode_Medium;
     } else if (inParams.fanSpeed == HeatpumpFanSpeed::High) {
         outFanMode = HAClimateFanMode_High;
+    } else if (inParams.fanSpeed == HeatpumpFanSpeed::Quiet) {
+        outFanMode = HAClimateFanMode_Quiet;
     } else {
         outFanMode = HAClimateFanMode_Auto;
     }

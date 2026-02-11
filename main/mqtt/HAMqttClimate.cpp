@@ -17,7 +17,7 @@ const char *kModeStr[] = {
 
 const char *kFanModeStr[] = {
     "auto",
-    "diffuse",
+    "quiet",
     "low",
     "medium",
     "high"
@@ -130,7 +130,7 @@ bool HAMqttClimate::publish_autodiscovery()
     j["temperature_unit"] = "C";
 
     // Fan
-    j["fan_modes"] = {"auto", "diffuse" /*Quiet*/, "low", "medium", "high"};
+    j["fan_modes"] = {"auto", "quiet", "low", "medium", "high"};
     j["fan_mode_command_topic"] = base_topic + "/set/fan_mode";
     j["fan_mode_state_topic"]   = state_topic;
     j["fan_mode_state_template"] =
